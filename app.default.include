@@ -1,0 +1,7 @@
+$1 system::homedir rwxat
+$1 system::vconf rwxat
+$1 system::media rwxat
+$1 system::share rwxat
+$1 pulseaudio rwxat
+e17 $1 w
+$1 sys-assert::core rwxat

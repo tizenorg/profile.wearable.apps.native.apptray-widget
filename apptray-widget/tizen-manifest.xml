@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="3.0" package="org.tizen.apptray-widget" version="1.0.0">
+    <profile name="wearable"/>
+    <widget-application appid="org.tizen.apptray-widget" exec="apptray-widget" main="true" update-period="0">
+        <label>Apps Shortcut</label>
+        <icon>org.tizen.apptray-widget.png</icon>
+        <support-size preview="apps_widget_preview.png">2x2</support-size>
+    </widget-application>
+    <privileges> 
+        <privilege>http://tizen.org/privilege/packagemanager.info</privilege>
+        <privilege>http://tizen.org/privilege/packagemanager.clearcache</privilege>
+        <privilege>http://tizen.org/privilege/notification</privilege>
+        <privilege>http://tizen.org/privilege/power</privilege>
+        <privilege>http://tizen.org/privilege/appmanager.launch</privilege>
+        <privilege>http://tizen.org/privilege/message.write</privilege>
+        <privilege>http://tizen.org/privilege/message.read</privilege>
+        <privilege>http://tizen.org/privilege/contact.read</privilege>
+        <privilege>http://tizen.org/privilege/widget.viewer</privilege>
+    </privileges>
+</manifest>

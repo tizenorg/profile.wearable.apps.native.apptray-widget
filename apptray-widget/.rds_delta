@@ -1,0 +1,9 @@
+#delete
+#add
+res/app-widget-small.png
+res/app-widget.png
+#modify
+author-signature.xml
+signature1.xml
+bin/app-widget
+res/app_shortcut.edj

@@ -1,0 +1,11 @@
+<manifest>
+    <define>
+        <domain name="org.tizen.apptray-widget"/>
+    </define>
+    <request>
+        <domain name="org.tizen.apptray-widget"/>
+    </request>
+    <assign>
+        <filesystem path="/usr/apps/org.tizen.apptray-widget/shared" label="_" exec_label="_" type="transmutable" />
+    </assign>
+</manifest>
