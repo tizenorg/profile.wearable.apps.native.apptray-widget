@@ -1,0 +1,62 @@
+color_classes {
+    color_class {
+        name: "AO0115";
+        color: 0 0 0 200;
+    }
+    color_class {
+        name: "AT0315";
+        color: 255 255 255 200;
+    }
+    color_class {
+        name: "AO0342";
+        color: 0 0 0 40;
+    }
+    color_class {
+        name: "AO044L1";
+        color: 255 255 255 200;
+    }
+    color_class {
+        name: "AO044L1P";
+        color: 255 255 255 50;
+    }
+    color_class {
+        name: "AO044L3";
+        color: 184 45 45 200;
+    }
+    color_class {
+        name: "AO044L3P";
+        color: 184 45 45 200;
+    }
+    color_class {
+        name: "AO044L4";
+        color: 0 0 0 35;
+    }
+    color_class {
+        name: "AO071";
+        color: 255 255 255 200;
+    }
+    color_class {
+        name: "AO071P";
+        color: 255 255 255 50;
+    }
+    color_class {
+        name: "AT039";
+        color: 255 255 255 200;
+    }
+    color_class {
+        name: "AO013L1";
+        color: 255 106 0 200;
+    }
+    color_class {
+        name: "AO013L2";
+        color: 255 255 255 200;
+    }
+    color_class {
+        name: "AO013L3";
+        color: 0 0 0 40;
+    }
+    color_class {
+        name: "AT03151";
+        color: 255 255 255 200;
+    }
+}

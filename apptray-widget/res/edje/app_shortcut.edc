@@ -1,0 +1,943 @@
+#include "app-widget-colorclass.in"
+
+#define WIDGET_W 360
+#define WIDGET_H 360
+#define SHORTCUT_W 100
+#define SHORTCUT_H 100 
+
+images {
+	image : "widget_shortcut_circle_bg_stroke.png" COMP;
+	image : "widget_shortcut_circle_bg.png" COMP;
+	image : "widget_shortcut_circle_plus.png" COMP;
+	
+//	image : "apps_widget_preview_bg_dark.png" COMP;
+//	image : "apps_widget_preview_bg_light.png" COMP;
+
+	image : "apps_widget_badge_bg.#.png" COMP;
+	image : "apps_widget_badge_shadow.#.png" COMP;
+	image : "apps_widget_badge_stroke.#.png" COMP;
+}
+
+styles {
+	style {
+		name: "name_style";
+		base: "font=TIZEN:style=Light text_class=AT0315 font_size="24" align=middle color=#FFFFFF color_class=AT0315 ellipsis=1 wrap=mixed";
+	}
+}
+
+collections {
+	base_scale: 1.3; 
+	group {
+		name: "dbox_bg";
+		parts {
+			part {
+				name: "bg";
+				type: RECT;
+				mouse_events: 1;
+//				clip_to: "bg,clip";
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					//image { normal: "apps_widget_preview_bg_dark.png"; }
+					color: 0 0 0 255;
+					visible: 1;
+				}
+				description {
+					state: "dark_theme" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					//image { normal: "apps_widget_preview_bg_dark.png"; }
+					color: 0 0 0 255;
+					visible: 1;
+				}
+				
+			}
+			part {
+				name: "bg_swallow";
+				type: SWALLOW;
+				mouse_events: 1;
+//				clip_to: "bg,clip";
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.5 0.5; to : "bg"; }
+					rel2 { relative: 0.5 0.5; to : "bg"; }
+					align: 0.5 0.5;
+					min : 360 360;
+					max : 360 360;
+					visible: 1;
+				}
+			}
+		}
+		programs{
+			program {
+				signal: "dark_theme";
+				source: "bg";
+				action: STATE_SET "dark_theme" 0.0;
+				target: "bg";
+			}
+		}
+	}
+	group {
+		name: "layout";
+		parts {
+			part {
+				name: "bg";
+				type: RECT;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "index1";
+				type: SWALLOW;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 {
+						relative:  130/WIDGET_W 21/WIDGET_H;
+						to : "bg";
+					}
+					rel2 {
+						relative: (130+SHORTCUT_W)/WIDGET_W (21+SHORTCUT_H)/WIDGET_H;
+						to : "bg";
+					}
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_small_l_on_hold_1";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: (90)/WIDGET_W 0.0; to: "bg"; }
+					rel2 { relative: (125)/WIDGET_W 100/WIDGET_H; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_on_hold_1";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 125/WIDGET_W 0.0; to: "bg"; }
+					rel2 { relative: (125+SHORTCUT_W+10)/WIDGET_W 180/WIDGET_H; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_small_r_on_hold_1";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: (125+SHORTCUT_W+10)/WIDGET_W 0.0; to: "bg"; }
+					rel2 { relative: (125+SHORTCUT_W+10+35)/WIDGET_W 100/WIDGET_H; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "index2";
+				type: SWALLOW;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 {
+						relative:  (130+SHORTCUT_W+9)/WIDGET_W (130)/WIDGET_H;
+						to : "bg";
+					}
+					rel2 {
+						relative: (130+SHORTCUT_W+9+SHORTCUT_W)/WIDGET_W (130+SHORTCUT_H)/WIDGET_H;
+						to : "bg";
+					}
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_on_hold_2";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: (125+SHORTCUT_W+10)/WIDGET_W 100/WIDGET_H; to: "bg"; }
+					rel2 { relative: 1.0 (100+180)/WIDGET_H; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "index3";
+				type: SWALLOW;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 {
+						relative:  (130)/WIDGET_W (219)/WIDGET_H;
+						to : "bg";
+					}
+					rel2 {
+						relative: (130+SHORTCUT_W)/WIDGET_W (219+SHORTCUT_H)/WIDGET_H;
+						to : "bg";
+					}
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_small_l_on_hold_3";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: (90)/WIDGET_W 280/WIDGET_H; to: "bg"; }
+					rel2 { relative: (125)/WIDGET_W 1.0; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_on_hold_3";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 125/WIDGET_W 180/WIDGET_H; to: "bg"; }
+					rel2 { relative: (125+SHORTCUT_W+10)/WIDGET_W 1.0; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_small_r_on_hold_3";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: (125+SHORTCUT_W+10)/WIDGET_W 280/WIDGET_H; to: "bg"; }
+					rel2 { relative: (125+SHORTCUT_W+10+35)/WIDGET_W 1.0; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "index4";
+				type: SWALLOW;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 {
+						relative:  (21)/WIDGET_W (130)/WIDGET_H;
+						to : "bg";
+					}
+					rel2 {
+						relative: (21+SHORTCUT_W)/WIDGET_W (130+SHORTCUT_H)/WIDGET_H;
+						to : "bg";
+					}
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_on_hold_4";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 100/WIDGET_H; to: "bg"; }
+					rel2 { relative: (125)/WIDGET_W (100+180)/WIDGET_H; to: "bg";}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+		} /*end of parts */
+		programs {
+			program{
+				name: "mouse_clicked_1";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_on_hold_1";
+				action: SIGNAL_EMIT "mouse_clicked_1" "*";
+			}
+			program{
+				name: "mouse_clicked_l_1";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_l_on_hold_1";
+				action: SIGNAL_EMIT "mouse_clicked_l_1" "*";
+			}
+			program{
+				name: "mouse_clicked_r_1";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_r_on_hold_1";
+				action: SIGNAL_EMIT "mouse_clicked_r_1" "*";
+			}
+			program{
+				name: "mouse_clicked_2";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_on_hold_2";
+				action: SIGNAL_EMIT "mouse_clicked_2" "*";
+			}
+			program{
+				name: "mouse_clicked_3";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_on_hold_3";
+				action: SIGNAL_EMIT "mouse_clicked_3" "*";
+			}
+			program{
+				name: "mouse_clicked_l_3";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_l_on_hold_3";
+				action: SIGNAL_EMIT "mouse_clicked_l_3" "*";
+			}
+			program{
+				name: "mouse_clicked_r_3";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_r_on_hold_3";
+				action: SIGNAL_EMIT "mouse_clicked_r_3" "*";
+			}
+			program{
+				name: "mouse_clicked_4";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_on_hold_4";
+				action: SIGNAL_EMIT "mouse_clicked_4" "*";
+			}
+			program{
+				name: "mouse_clicked_l_4";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_l_on_hold_4";
+				action: SIGNAL_EMIT "mouse_clicked_l_4" "*";
+			}
+			program{
+				name: "mouse_clicked_r_4";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_small_r_on_hold_4";
+				action: SIGNAL_EMIT "mouse_clicked_r_4" "*";
+			}
+		}
+	} /* end of layout group */
+	group {
+		name: "empty_slot";
+		parts {
+			part {
+				name: "bg";
+				type: RECT;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					color : 0 0 255 255;
+					visible: 1;
+				}
+			}
+		}
+	}/* end of slot group */
+	group {
+		name: "icon_slot";
+		parts {
+			part {
+				name: "bg";
+				type: RECT;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part{
+				name: "default";
+				type: RECT;
+				description {
+					state: "default" 0.0;
+					color: 0 0 0 0;
+					perspective.zplane:0;
+				}
+			}
+			part{
+				name: "zoom_1/2";
+				type: RECT;
+				description {
+					state: "default" 0.0;
+					color: 0 0 0 0;
+					perspective.zplane:-500;
+				}
+			}
+			part {
+				name: "icon";
+				type: SWALLOW;
+				clip_to: "clipper";
+				scale: 1;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "bg"; }
+					rel2 { relative: 1.0 1.0; to: "bg"; }
+					min : 100 100;
+					max : 100 100;
+//					color : 255 255 255 255;
+					visible: 1;
+					/*map{
+						on:1;
+						perspective: "default";
+					}*/
+				}
+				description{
+					state: "glow" 0.0;
+					inherit: "default";
+//					color: 255 255 255 50;
+				/*	map{
+						perspective: "zoom_1/2";
+					}*/
+				}
+			}
+			part{
+				name: "name";
+				type: TEXTBLOCK;
+				mouse_events : 0;
+				description {
+					state: "default" 0.0;
+					rel1 {
+						relative: 0.0 1.0;
+						to : "icon";
+						offset: 0 18;
+					}
+					rel2 {
+						relative: 1.0 1.0;
+						to : "icon";
+						offset: 0 18;
+					}
+					fixed : 0 1;
+					color_class: "AT0315";
+					align: 0.5 0.5;
+					min : 100 32;
+					max : 100 32;
+					text {
+						style: "name_style";
+						align: 0.5 0.5;
+					}
+					visible : 1;
+				}
+			}
+			part {
+				name: "badge_bg";
+				type: IMAGE;
+				scale: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_bg.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L1";
+					min : 54 54;
+					visible: 0;
+				}
+				description {
+					state: "1" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_bg.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L1";
+					min : 54 54;
+					visible: 1;
+				}
+				description {
+					state: "2" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					image { normal: "apps_widget_badge_bg.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L1";
+					min : 70 54;
+					visible: 1;
+				}
+				description {
+					state: "3" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_bg.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L1";
+					min : 82 54;
+					visible: 1;
+				}
+				description {
+					state: "3r" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_bg.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L1";
+					min : 82 54;
+					visible: 1;
+				}
+			}
+			part {
+				name: "badge_stroke";
+				type: IMAGE;
+				scale: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_stroke.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L2";
+					min : 54 54;
+					visible: 0;
+				}
+				description {
+					state: "1" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_stroke.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L2";
+					min : 54 54;
+					visible: 1;
+				}
+				description {
+					state: "2" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					image { normal: "apps_widget_badge_stroke.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L2";
+					min : 70 54;
+					visible: 1;
+				}
+				description {
+					state: "3" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_stroke.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L2";
+					min : 82 54;
+					visible: 1;
+				}
+				description {
+					state: "3r" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_stroke.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L2";
+					min : 82 54;
+					visible: 1;
+				}
+			}
+			part {
+				name: "badge_shadow";
+				type: IMAGE;
+				scale: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_shadow.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L3";
+					min : 54 54;
+					visible: 0;
+				}
+				description {
+					state: "1" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -12 10; }
+					image { normal: "apps_widget_badge_shadow.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L3";
+					min : 54 54;
+					visible: 1;
+				}
+				description {
+					state: "2" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -20 10; }
+					image { normal: "apps_widget_badge_shadow.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L3";
+					min : 70 54;
+					visible: 1;
+				}
+				description {
+					state: "3" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_shadow.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L3";
+					min : 82 54;
+					visible: 1;
+				}
+				description {
+					state: "3r" 0.0;
+					rel1 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					rel2 { relative: 1.0 0.0; to: "icon"; offset: -26 10; }
+					image { normal: "apps_widget_badge_shadow.#.png"; }
+					fixed: 1 1;
+					color_class: "AO013L3";
+					min : 82 54;
+					visible: 1;
+				}
+			}
+			part {
+				name: "badge_txt";
+				type: TEXT;
+				scale: 1;
+				mouse_events: 0;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.5 0.5; to, "badge_bg"; offset: 0 -2; }
+					rel2 { relative: 0.5 0.5; to, "badge_bg"; offset: 0 -2; }
+					align: 0.5 0.5;
+					color_class: "AT039";
+					text {
+						text_class: "AT039";
+						align: 0.5 0.5;
+						min: 1 1;
+					}
+					fixed: 1 1;
+					visible: 0;
+				}
+				description {
+					state: "1" 0.0;
+					inherit: "default" 0.0;
+					visible: 1;
+				}
+				description {
+					state: "2" 0.0;
+					inherit: "1" 0.0;
+				}
+				description {
+					state: "3" 0.0;
+					inherit: "1" 0.0;
+				}
+				description {
+					state: "3r" 0.0;
+					inherit: "1" 0.0;
+				}
+			}
+			part {
+				name: "clipper";
+				type: RECT;
+				scale: 1;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "icon"; }
+					rel2 { relative: 1.0 1.0; to: "icon"; }
+					color : 255 255 255 255;
+					visible: 1;
+				}
+				description {
+					state: "glow" 0.0;
+					rel1 { relative: 0.0 0.0; to: "icon"; }
+					rel2 { relative: 1.0 1.0; to: "icon"; }
+					color : 255 255 255 50;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect_on_hold";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				ignore_flags: ON_HOLD;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "bg"; }
+					rel2 { relative: 1.0 1.0; to: "bg"; offset: 0 35;}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "bg"; }
+					rel2 { relative: 1.0 1.0; to: "bg"; offset: 0 35;}
+					color: 0 0 0 0;
+					visible: 1;
+				}
+			}
+		}
+		programs {
+			program{
+				name : "launch_effect";
+				signal : "launch_effect";
+				source : "widget";
+				action : STATE_SET "glow" 0.0;
+				//target : "icon";
+				target : "clipper";
+				//transition : DECEL_FAC 0.7 0.8;
+				//transition : ACCEL 0.1;
+				transition : ACCEL 0.3;
+				after: "complete,launch_effect";
+			}
+			program{
+				name : "complete_effect";
+				signal : "complete_effect";
+				source : "widget";
+				action : STATE_SET "default" 0.0;
+				//target : "icon";
+				target : "clipper";
+				//transition : SPRING 0.3 1 1;
+				//transition : BOUNCE 0.4 0.0 2;
+				//transition : LINEAR 0.5;
+				transition : DECEL 0.5;
+			}
+			program{
+				name: "complete,launch_effect";
+				signal: "complete,launch_effect";
+				source: "widget";
+				action: SIGNAL_EMIT "complete,launch_effect" "event";
+			}
+			program{
+				name: "mouse_down";
+				signal: "mouse,down,*";
+				source: "touch_rect";
+				action: SIGNAL_EMIT "mouse_down" "*";
+			}
+			program{
+				name: "mouse_up";
+				signal: "mouse,up,*";
+				source: "touch_rect";
+				action: SIGNAL_EMIT "mouse_up" "*";
+			}
+			program{
+				name: "mouse_clicked";
+				signal: "mouse,clicked,*";
+				source: "touch_rect_on_hold";
+				action: SIGNAL_EMIT "mouse_clicked" "*";
+			}
+			// Badge
+			program {
+				signal: "badge,on,1";
+				source: "slot";
+				action: STATE_SET "1" 0.0;
+				target: "badge_shadow";
+				target: "badge_stroke";
+				target: "badge_txt";
+				target: "badge_bg";
+			}
+			program {
+				signal: "badge,on,2";
+				source: "slot";
+				action: STATE_SET "2" 0.0;
+				target: "badge_shadow";
+				target: "badge_stroke";
+				target: "badge_txt";
+				target: "badge_bg";
+			}
+			program {
+				signal: "badge,on,3";
+				source: "slot";
+				action: STATE_SET "3" 0.0;
+				target: "badge_shadow";
+				target: "badge_stroke";
+				target: "badge_txt";
+				target: "badge_bg";
+			}
+			program {
+				signal: "badge,on,3r";
+				source: "slot";
+				action: STATE_SET "3r" 0.0;
+				target: "badge_shadow";
+				target: "badge_stroke";
+				target: "badge_txt";
+				target: "badge_bg";
+			}
+			program {
+				signal: "badge,off";
+				source: "slot";
+				action: STATE_SET "default" 0.0;
+				target: "badge_shadow";
+				target: "badge_stroke";
+				target: "badge_txt";
+				target: "badge_bg";
+			}
+		}
+	}/* end of slot group */
+	group {
+		name: "icon_slot_apps";
+		parts {
+			part {
+				name: "bg";
+				type: RECT;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; offset: 0 0; }
+					rel2 { relative: 1.0 1.0; offset: 0 0; }
+					color : 0 0 0 0;
+					visible: 1;
+				}
+			}
+			part{
+				name: "default";
+				type: RECT;
+				description {
+					state: "default" 0.0;
+					color: 0 0 0 0;
+					perspective.zplane:0;
+				}
+			}
+			part{
+				name: "zoom_1/2";
+				type: RECT;
+				description {
+					state: "default" 0.0;
+					color: 0 0 0 0;
+					perspective.zplane:-500;
+				}
+			}
+			part {
+				name: "icon";
+				type: SWALLOW;
+				clip_to: "clipper";
+				scale: 1;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "bg"; }
+					rel2 { relative: 1.0 1.0; to: "bg"; }
+					min : 100 100;
+					max : 100 100;
+//					color : 255 255 255 255;
+					visible: 1;
+					/*map{
+						on:1;
+						perspective: "default";
+					}*/
+				}
+				description{
+					state: "glow" 0.0;
+					inherit: "default";
+//					color: 255 255 255 50;
+				/*	map{
+						perspective: "zoom_1/2";
+					}*/
+				}
+			}
+			part {
+				name: "clipper";
+				type: RECT;
+				scale: 1;
+				mouse_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "icon"; }
+					rel2 { relative: 1.0 1.0; to: "icon"; }
+					color : 255 255 255 255;
+					visible: 1;
+				}
+				description {
+					state: "glow" 0.0;
+					rel1 { relative: 0.0 0.0; to: "icon"; }
+					rel2 { relative: 1.0 1.0; to: "icon"; }
+					color : 255 255 255 50;
+					visible: 1;
+				}
+			}
+			part {
+				name: "touch_rect";
+				type: RECT;
+				mouse_events: 1;
+				repeat_events: 1;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; to: "bg"; }
+					rel2 { relative: 1.0 1.0; to: "bg"; }
+					color: 0 255 0 255;
+					visible: 1;
+				}
+			}
+		}
+		programs {
+			program{
+				name : "launch_effect";
+				signal : "launch_effect";
+				source : "widget";
+				action : STATE_SET "glow" 0.0;
+				//target : "icon";
+				target : "clipper";
+				//transition : DECEL_FAC 0.7 0.8;
+				//transition : ACCEL 0.1;
+				transition : ACCEL 0.3;
+				after: "complete,launch_effect";
+			}
+			program{
+				name : "complete_effect";
+				signal : "complete_effect";
+				source : "widget";
+				action : STATE_SET "default" 0.0;
+				//target : "icon";
+				target : "clipper";
+				//transition : SPRING 0.3 1 1;
+				//transition : BOUNCE 0.4 0.0 2;
+				//transition : LINEAR 0.5;
+				transition : DECEL 0.5;
+			}
+			program{
+				name: "complete,launch_effect";
+				signal: "complete,launch_effect";
+				source: "widget";
+				action: SIGNAL_EMIT "complete,launch_effect" "event";
+			}
+			program{
+				name: "mouse_down";
+				signal: "mouse,down,*";
+				source: "touch_rect";
+				action: SIGNAL_EMIT "mouse_down" "*";
+			}
+			program{
+				name: "mouse_up";
+				signal: "mouse,up,*";
+				source: "touch_rect";
+				action: SIGNAL_EMIT "mouse_up" "*";
+			}
+			program{
+				name: "mouse_clicked";
+				signal: "mouse,clicked,*";
+				source: "touch_rect";
+				action: SIGNAL_EMIT "mouse_clicked" "*";
+			}
+		}
+	}/* end of slot group */
+}/* end of collections */

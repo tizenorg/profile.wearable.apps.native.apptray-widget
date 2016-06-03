@@ -1,0 +1,9 @@
+#delete
+#add
+#modify
+author-signature.xml
+signature1.xml
+bin/app-widget-app
+res/edje/add_to_shortcut.edj
+res/edje/home_custom_layout.edj
+tizen-manifest.xml
