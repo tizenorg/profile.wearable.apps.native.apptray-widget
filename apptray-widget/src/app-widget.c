@@ -22,11 +22,14 @@
 #include <widget_service.h>
 #include <widget_errno.h>
 #include <app_control.h>
+
 #ifdef TIZEN_SDK
 #include <package_manager.h>
+#include <app_manager.h>
 #else
 #include <pkgmgr-info.h>
 #include <package-manager.h>
+#include <aul.h>
 #endif
 
 #include <badge.h>
@@ -474,11 +477,15 @@ static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 		_D("launch %s", info->appid);
 		if(info->open_app){
 			_D("launch wgt");
-//			int ret_aul = aul_open_app(info->appid);
-//			if (ret_aul < AUL_R_OK) {
-//				_E("wgt launch failed");
-//				return;
-//			}
+#ifdef TIZEN_SDK
+			int ret_aul  = app_manager_open_app(info->appid);
+#else
+			int ret_aul  = aul_open_app(info->appid);
+#endif
+			if (ret_aul < AUL_R_OK) {
+				_E("wgt launch failed");
+				return;
+			}
 		}
 		else{
 			_D("launch normal");
