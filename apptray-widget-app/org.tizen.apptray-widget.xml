@@ -6,7 +6,7 @@
         <icon>org.tizen.apptray-widget.png</icon>
         <support-size preview="/usr/apps/org.tizen.apptray-widget/shared/res/apps_widget_preview.png">2x2</support-size>
     </widget-application>
-    <ui-application appid="org.tizen.apptray-widget-app" exec="apptray-widget-app" multiple="false" nodisplay="false" taskmanage="true" type="capp">
+    <ui-application appid="org.tizen.apptray-widget-app" exec="apptray-widget-app" multiple="false" nodisplay="true" taskmanage="true" type="capp">
         <label>app shortcuts</label>
         <icon>org.tizen.apptray-widget-app.png</icon>
     </ui-application>

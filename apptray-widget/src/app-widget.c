@@ -15,7 +15,7 @@
  * limitations under the License.
  */
  
-#define TIZEN_SDK
+#undef TIZEN_SDK
 #include <Evas.h>
 #include <Elementary.h>
 #include <dlog.h>
@@ -718,10 +718,12 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		}
 		slot = elm_layout_add(item->layout);
 		item->obj[pos]->obj = slot;
-
-		ret = elm_layout_file_set(slot, EDJE_FILE, "icon_slot");
+		char full_path[PATH_MAX] = { 0, };
+		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
+		_D("full_path:%s",full_path);
+		ret = elm_layout_file_set(slot, full_path, "icon_slot");
 		if(ret == EINA_FALSE){
-			LOGE("failed to set empty slot");
+			_E("failed to set empty slot");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
@@ -736,7 +738,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		char *label = NULL;
 		ret = pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h);
 		if(ret != PMINFO_R_OK){
-			LOGE("get appinfo failed. let it empty slot, %d", ret);
+			_E("get appinfo failed. let it empty slot, %d", ret);
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
@@ -745,7 +747,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		}
 
 		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_pkgid(appinfo_h, &pkgid)){
-			LOGE("get pkgid failed. let it empty slot");
+			_E("get pkgid failed. let it empty slot");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
@@ -755,7 +757,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		item->obj[pos]->pkgid = strdup(pkgid);
 
 		if(0 > pkgmgrinfo_pkginfo_get_pkginfo(pkgid, &pkghandle)){
-			LOGE("get pkghandle faile.");
+			_E("get pkghandle faile.");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
 			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
@@ -763,7 +765,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 			return;
 		}
 		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)){
-			LOGE("get label failed");
+			_E("get label failed");
 			item->obj[pos]->label = strdup("");
 		}
 		else{
@@ -773,7 +775,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 		char *type = NULL;
 		if(PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type)){
-			LOGE("get app type failed");
+			_E("get app type failed");
 		}
 		if (type) {
 			if (!strncmp(type, APP_TYPE_WGT, strlen(APP_TYPE_WGT))) {
@@ -783,10 +785,10 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 			}
 		}
 
-		_SW("%s", appid);
+		_W("%s", appid);
 		char *icon_path_tmp = NULL;
 		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon_path_tmp)){
-				LOGE("get icon path failed");
+				_E("get icon path failed");
 			}
 			if (icon_path_tmp) {
 				if (strlen(icon_path_tmp) > 0) {
@@ -799,7 +801,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 			}
 			item->obj[pos]->icon = strdup(icon_path);
 		
-		_SW("icon path in object info %s, label %s", item->obj[pos]->icon, item->obj[pos]->label);
+		_W("icon path in object info %s, label %s", item->obj[pos]->icon, item->obj[pos]->label);
 		icon = evas_object_image_add(evas_object_evas_get(slot));
 		evas_object_repeat_events_set(icon, EINA_TRUE);
 		evas_object_image_file_set(icon, icon_path, NULL);
