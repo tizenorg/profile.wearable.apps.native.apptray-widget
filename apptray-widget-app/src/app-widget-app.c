@@ -16,7 +16,7 @@
  */
 #include "app-widget-app.h"
 
-#define TIZEN_SDK
+#undef TIZEN_SDK
 
 #include <app.h>
 #include <Evas.h>
@@ -759,6 +759,7 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 #else
 
 Evas_Object *_set_app_slot(const char *appid, int pos){
+	_ENTER;
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	_D("%s", appid);
 	char *icon_path_tmp = NULL;
@@ -772,7 +773,10 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 	if(!strcmp(appid, "empty")){
 		slot = elm_layout_add(g_info->edit_layout);
 
-		ret = elm_layout_file_set(slot, EDJE_FILE, "empty_slot");
+		char full_path[PATH_MAX] = { 0, };
+		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
+		_D("full_path:%s",full_path);
+		ret = elm_layout_file_set(slot, full_path, "empty_slot");
 		if(ret == EINA_FALSE){
 			_E("failed to set empty slot");
 			return NULL;
@@ -815,8 +819,10 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 		_D("icon path in object info %s", icon_path_tmp);
 
 		slot = elm_layout_add(g_info->edit_layout);
-
-		ret = elm_layout_file_set(slot, EDJE_FILE, "icon_slot");
+		char full_path[PATH_MAX] = { 0, };
+		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
+		_D("full_path:%s",full_path);
+		ret = elm_layout_file_set(slot, full_path, "icon_slot");
 		if(ret == EINA_FALSE){
 			_E("failed to set empty slot");
 			if(icon_path_tmp)
@@ -1467,12 +1473,6 @@ static Eina_List *_read_all_apps(Eina_List **list)
 	retv_if(PMINFO_R_OK != pkgmgrinfo_appinfo_filter_create(&handle), NULL);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_filter_add_bool(handle, PMINFO_APPINFO_PROP_APP_NODISPLAY, 0), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_filter_foreach_appinfo(handle, _apps_all_cb, list), ERROR);
-
-	item_info_s *recent_item_info = NULL;
-	recent_item_info = apps_recent_info_create("com.samsung.w-taskmanager");
-
-	*list = eina_list_append(*list, recent_item_info);
-
 	*list = eina_list_sort(*list, eina_list_count(*list), _apps_sort_cb);
 
 ERROR:
