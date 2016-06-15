@@ -44,7 +44,7 @@
 #define LANGUAGE_ARABIC "ar"
 
 #define  PACKAGE_MANAGER_PKGINFO_PROP_NODISPALY  "PMINFO_PKGINFO_PROP_PACKAGE_NODISPLAY_SETTING"
-#define APP_WIDGET_PKGID "org.example.app-widget"
+#define APP_WIDGET_PKGID "org.tizen.app-widget"
 
 
 #define DEFAULT_APP_ORDER "org.tizen.watch-setting empty empty empty"
@@ -190,6 +190,7 @@ static void _terminate_add_to_shortcut(void){
 		}
 
 		bundle_add_str(b, "test", "delete");
+		updateContent();
 		//ret = widget_service_trigger_update(APP-WIDGET-PKGID, widget_id, b, 1);
 		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
@@ -215,9 +216,10 @@ static void _terminate_add_to_shortcut(void){
 		snprintf(content, sizeof(content)-1, "%s %s %s %s", g_info->appid_list[0], g_info->appid_list[1], g_info->appid_list[2], g_info->appid_list[3]);
 		bundle_add_str(b, "test", content);
 		_D("content : %s", content);
-		//ret = widget_service_trigger_update("org.example.app-widget", widget_id, b, 1);
-		ret = widget_service_trigger_update("org.example.app-widget", NULL, b, 1);
+		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
 		updateContent();
+		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
+
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app widget widget trigger failed %d", ret);
 		}
@@ -294,6 +296,9 @@ static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, 
 	_D("icon clicked");
 
 	item_info_s *item_info = evas_object_data_get((Evas_Object *)data, "p_i_n");
+
+	if(!item_info)
+		return;
 
 	g_info->appid_list[slot_index] = strdup(item_info->appid);
 
@@ -1488,11 +1493,13 @@ static Eina_Bool _load_list(void* data){
 	return ECORE_CALLBACK_CANCEL;
 }
 
+/*
 void create_add_to_shortcut(const char *widget_name, const char *index){
 	_D("check");
 	_create_layout(NULL);
 
 }
+*/
 
 static void
 app_pause(void *data)
@@ -1521,6 +1528,7 @@ static void app_control(app_control_h service, void *data)
 
 	char *tmp = NULL;
 	char *first = NULL;
+	char* save;
 	int i = 0;
 	int reset = 0;
 	int ret = 0;
@@ -1585,18 +1593,21 @@ static void app_control(app_control_h service, void *data)
 
 	for(i = 0 ; i < 4 ; i++){
 		if(i == 0){
-			first = strtok(tmp, " ");
-			if(!strcmp(first, content)){
-				_E("content info format is not proper");
-				reset = 1;
-				break;
-			}
-			else{
-				_set_app_slot(first, i);
+			first = strtok_r(tmp, " ",&save);
+			if(content)
+			{
+				if(!strcmp(first, content)){
+					_E("content info format is not proper");
+					reset = 1;
+					break;
+				}
+				else{
+					_set_app_slot(first, i);
+				}
 			}
 		}
 		else{
-			_set_app_slot(strtok(NULL, " "), i);
+			_set_app_slot(strtok_r(NULL, " ",&save), i);
 		}
 	}
 
@@ -1618,8 +1629,8 @@ static void app_control(app_control_h service, void *data)
 
 		bundle_add_str(b, "test", tmp);
 		_D("content : %s", tmp);
-		//ret = widget_service_trigger_update("org.example.app-widget", widget_id, b, 1);
-		ret = widget_service_trigger_update("org.example.app-widget", NULL, b, 1);
+		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app-widget trigger failed %x", ret);
 		}
@@ -1629,11 +1640,11 @@ static void app_control(app_control_h service, void *data)
 
 		for(i = 0 ; i < 4 ; i++){
 			if(i == 0){
-				first = strtok(tmp, " ");
+				first = strtok_r(tmp, " ",&save);
 				_set_app_slot(first, i);
 			}
 			else{
-				_set_app_slot(strtok(NULL, " "), i);
+				_set_app_slot(strtok_r(NULL, " ",&save), i);
 			}
 		}
 	}
