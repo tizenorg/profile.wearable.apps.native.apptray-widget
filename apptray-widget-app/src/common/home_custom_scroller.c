@@ -58,6 +58,7 @@ int home_custom_scroller_get_current_page_no(Evas_Object *scroller);
 
 static void _scroller_mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+	_ENTER;
 	Evas_Event_Mouse_Down *ei = event_info;
 	ret_if(!ei);
 
@@ -69,6 +70,7 @@ static void _scroller_mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void 
 
 static void _scroller_mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+	_ENTER;
 	Evas_Event_Mouse_Up *ei = event_info;
 	ret_if(!ei);
 
@@ -83,13 +85,14 @@ static void _scroller_mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *e
 
 static void _default_anim_start_cb(void *data, Evas_Object *scroller, void *event_info)
 {
+	_ENTER;
 	_D("start the scroller animation");
 	evas_object_data_set(scroller, PRIVATE_DATA_KEY_IS_SCROLLING, (void *)1);
 
 	void *(*_anim_start_cb)(void *, Evas_Object *, void *);
 	_anim_start_cb = evas_object_data_get(scroller, PRIVATE_DATA_KEY_SCROLLER_ANIM_START_FN);
 	if(_anim_start_cb) _anim_start_cb(data, scroller, event_info);
-	
+
 	Evas_Object *page = home_custom_scroller_get_current_page(scroller);
 	ret_if(!page);
 }
@@ -98,6 +101,7 @@ static void _default_anim_start_cb(void *data, Evas_Object *scroller, void *even
 
 static void _default_anim_stop_cb(void *data, Evas_Object *scroller, void *event_info)
 {
+	_ENTER;
 	_D("stop the scroller animation");
 
 	void *(*_anim_stop_cb)(void *, Evas_Object *, void *);
@@ -122,6 +126,7 @@ static void _default_anim_stop_cb(void *data, Evas_Object *scroller, void *event
 
 static void _default_drag_start_cb(void *data, Evas_Object *scroller, void *event_info)
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	_D("start to drag the scroller animation");
@@ -146,6 +151,7 @@ static void _default_drag_start_cb(void *data, Evas_Object *scroller, void *even
 
 static void _default_drag_stop_cb(void *data, Evas_Object *scroller, void *event_info)
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	_D("stop to drag the scroller animation");
@@ -161,6 +167,7 @@ static void _default_drag_stop_cb(void *data, Evas_Object *scroller, void *event
 
 static void _default_scroll_cb(void *data, Evas_Object *scroller, void *event_info)
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	evas_object_data_set(scroller, PRIVATE_DATA_KEY_IS_SCROLLING, (void *)1);
@@ -179,6 +186,7 @@ static void _default_scroll_cb(void *data, Evas_Object *scroller, void *event_in
 
 static void _init_rotary(Evas_Object *scroller)
 {
+	_ENTER;
 	_D("Initialize the rotary event");
 //	eext_rotary_event_callback_set(scroller, _rotary_cb, NULL);
 }
@@ -187,6 +195,7 @@ static void _init_rotary(Evas_Object *scroller)
 
 static void _destroy_rotary(Evas_Object *scroller)
 {
+	_ENTER;
 	_D("Finish the rotary event");
 //	eext_rotary_event_callback_set(scroller, NULL, NULL);
 }
@@ -210,6 +219,7 @@ void home_custom_scroller_register_cb(Evas_Object *scroller,
 									void _drag_stop_cb(void *, Evas_Object *, void *),
 									void _scroll_cb(void *, Evas_Object *, void *))
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	evas_object_data_set(scroller, PRIVATE_DATA_KEY_SCROLLER_ANIM_START_FN, _anim_start_cb);
@@ -222,6 +232,7 @@ void home_custom_scroller_register_cb(Evas_Object *scroller,
 
 void home_custom_scroller_deregister_cb(Evas_Object *scroller)
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	evas_object_data_del(scroller, PRIVATE_DATA_KEY_SCROLLER_ANIM_START_FN);
@@ -329,6 +340,7 @@ ERROR:
 
 void home_custom_scroller_del(Evas_Object *scroller)
 {
+	_ENTER;
 	Evas_Object *page = NULL;
 	Eina_List *box_list = NULL;
 	scroller_info_s *scroller_info = NULL;
@@ -367,12 +379,14 @@ void home_custom_scroller_del(Evas_Object *scroller)
 
 void home_custom_scroller_pause(Evas_Object *scroller)
 {
+	_ENTER;
 	_D("");
 }
 
 
 void home_custom_scroller_resume(Evas_Object *scroller)
 {
+	_ENTER;
 	eext_rotary_object_event_activated_set(scroller, EINA_TRUE);
 
 	Evas_Object *index = (Evas_Object*)evas_object_data_get(scroller, PRIVATE_DATA_KEY_INDEX);
@@ -394,6 +408,7 @@ static void _page_mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void *eve
 
 static void _page_mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+	_ENTER;
 	Evas_Event_Mouse_Up *ei = event_info;
 	ret_if(!ei);
 
@@ -428,6 +443,7 @@ void home_custom_scroller_page_append(Evas_Object *scroller, Evas_Object *page)
 
 void home_custom_scroller_page_prepend(Evas_Object *scroller, Evas_Object *page)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 
 	ret_if(!scroller);
@@ -451,6 +467,7 @@ void home_custom_scroller_page_prepend(Evas_Object *scroller, Evas_Object *page)
 
 void home_custom_scroller_page_remove(Evas_Object *scroller, Evas_Object *page)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 
 	ret_if(!scroller);
@@ -475,6 +492,7 @@ void home_custom_scroller_page_remove(Evas_Object *scroller, Evas_Object *page)
 
 int home_custom_scroller_get_page_count(Evas_Object *scroller)
 {
+	_ENTER;
 	int count = 0;
 	Eina_List *page_list = NULL;
 	scroller_info_s *scroller_info = NULL;
@@ -498,6 +516,7 @@ int home_custom_scroller_get_page_count(Evas_Object *scroller)
 
 void home_custom_scroller_list_append(Evas_Object *scroller, Eina_List *page_list)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 	Eina_List *l = NULL;
 	Eina_List *n = NULL;
@@ -527,6 +546,7 @@ void home_custom_scroller_list_append(Evas_Object *scroller, Eina_List *page_lis
 
 void home_custom_scroller_list_remove(Evas_Object *scroller, Eina_List *page_list)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 	Eina_List *l = NULL;
 	Eina_List *n = NULL;
@@ -550,6 +570,7 @@ void home_custom_scroller_list_remove(Evas_Object *scroller, Eina_List *page_lis
 
 Eina_List *home_custom_scroller_get_page_list(Evas_Object *scroller)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 	Eina_List *page_list = NULL;
 
@@ -616,6 +637,7 @@ void home_custom_scroller_unedit(Evas_Object *scroller)
 
 void home_custom_scroller_freeze(Evas_Object *scroller, Eina_Bool status)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 
 	ret_if(!scroller);
@@ -635,6 +657,7 @@ void home_custom_scroller_freeze(Evas_Object *scroller, Eina_Bool status)
 
 Eina_Bool home_custom_scroller_is_freeze(Evas_Object *scroller)
 {
+	_ENTER;
 	scroller_info_s *scroller_info = NULL;
 
 	retv_if(!scroller, EINA_FALSE);
@@ -648,17 +671,20 @@ Eina_Bool home_custom_scroller_is_freeze(Evas_Object *scroller)
 
 void home_custom_scroller_page_freeze(Evas_Object *scroller, Evas_Object *page, Eina_Bool status)
 {
+	_ENTER;
 }
 
 
 Eina_Bool home_custom_scroller_is_page_freeze(Evas_Object *scroller, Evas_Object *page)
 {
+	_ENTER;
 	return EINA_FALSE;
 }
 
 
 static Eina_Bool _bring_in_timer_cb(void *data)
 {
+	_ENTER;
 	int i = 0;
 	Evas_Object *scroller = data;
 
@@ -688,6 +714,7 @@ static Eina_Bool _bring_in_timer_cb(void *data)
 
 void home_custom_scroller_bring_in(Evas_Object *scroller, int page_no)
 {
+	_ENTER;
 	Ecore_Timer *timer = NULL;
 
 	ret_if(!scroller);
@@ -705,6 +732,7 @@ void home_custom_scroller_bring_in(Evas_Object *scroller, int page_no)
 
 void home_custom_scroller_bring_in_page(Evas_Object *scroller, Evas_Object *page)
 {
+	_ENTER;
 	Evas_Object *tmp = NULL;
 	Eina_List *page_list = NULL;
 	Ecore_Timer *timer = NULL;
@@ -744,6 +772,7 @@ void home_custom_scroller_bring_in_page(Evas_Object *scroller, Evas_Object *page
 
 void home_custom_scroller_bring_in_direction(Evas_Object *scroller, Home_Custom_Sc_Direction direction)
 {
+	_ENTER;
 	int hPageNo = 0;
 	int vPageNo = 0;
 	int nPageCount = 0;
@@ -779,6 +808,7 @@ void home_custom_scroller_bring_in_direction(Evas_Object *scroller, Home_Custom_
 
 Eina_Bool home_custom_scroller_is_scrolling(Evas_Object *scroller)
 {
+	_ENTER;
 	retv_if(!scroller, EINA_FALSE);
 
 	return evas_object_data_get(scroller, PRIVATE_DATA_KEY_IS_SCROLLING) ? EINA_TRUE:EINA_FALSE;
@@ -787,6 +817,7 @@ Eina_Bool home_custom_scroller_is_scrolling(Evas_Object *scroller)
 
 void home_custom_scroller_region_show(Evas_Object *scroller, int hPageNo, int vPageNo)
 {
+	_ENTER;
 	elm_scroller_page_show(scroller, hPageNo, vPageNo);
 
 	evas_object_data_del(scroller, PRIVATE_DATA_KEY_IS_SCROLLING);
@@ -801,6 +832,7 @@ void home_custom_scroller_region_show(Evas_Object *scroller, int hPageNo, int vP
 
 Evas_Object *home_custom_scroller_get_first_page(Evas_Object *scroller)
 {
+	_ENTER;
 	Eina_List *page_list = NULL;
 	scroller_info_s *scroller_info = NULL;
 	Evas_Object *page = NULL;
@@ -833,6 +865,7 @@ Evas_Object *home_custom_scroller_get_first_page(Evas_Object *scroller)
 
 Evas_Object *home_custom_scroller_get_last_page(Evas_Object *scroller)
 {
+	_ENTER;
 	int count = 0;
 	Eina_List *page_list = NULL;
 	scroller_info_s *scroller_info = NULL;
@@ -881,6 +914,7 @@ Evas_Object *home_custom_scroller_get_current_page(Evas_Object *scroller)
 
 int home_custom_scroller_get_current_page_no(Evas_Object *scroller)
 {
+	_ENTER;
 	int hPageNo = 0;
 	int vPageNo = 0;
 
@@ -926,6 +960,7 @@ Evas_Object *home_custom_scroller_get_page(Evas_Object *scroller, int index)
 
 Eina_Bool home_custom_scroller_is_edge(Evas_Object *page)
 {
+	_ENTER;
 	retv_if(!page, EINA_FALSE);
 
 	return evas_object_data_get(page, PRIVATE_DATA_KEY_EDGE_RECT) ? EINA_TRUE:EINA_FALSE;
@@ -934,6 +969,7 @@ Eina_Bool home_custom_scroller_is_edge(Evas_Object *page)
 /* scroller index */
 Evas_Object *home_custom_scroller_index_add(Evas_Object *parent, Evas_Object *scroller)
 {
+	_ENTER;
 	retv_if(!parent, NULL);
 	retv_if(!scroller, NULL);
 
@@ -949,6 +985,7 @@ Evas_Object *home_custom_scroller_index_add(Evas_Object *parent, Evas_Object *sc
 
 void home_custom_scroller_index_update(Evas_Object *scroller)
 {
+	_ENTER;
 	ret_if(!scroller);
 
 	Evas_Object *index = evas_object_data_get(scroller, PRIVATE_DATA_KEY_INDEX);

@@ -63,7 +63,7 @@
 #define APPS_WIDGET "org.tizen.apptray-widget"
 #define VCONFKEY_WMS_HOST_STATUS_VENDOR "db/wms/host_status/vendor"
 #define APP_TYPE_WGT "wgt"
-#define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget-content"
+#define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
 
 #define DEFAULT_APP_ORDER "org.tizen.watch-setting empty empty empty"
 
@@ -78,7 +78,8 @@ char *icon_path;
 //samsung_log_manager_h log_manager_h = NULL;
 
 struct info {
-	widget_context_h id;
+	//widget_context_h id;
+	char* id;
 	char *content;
 	int size_type;
 	int w;
@@ -96,7 +97,8 @@ struct object_info {
 	char *icon;
 	char *label;
 	char *pkgid;
-	widget_context_h dbox_id;
+//	widget_context_h dbox_id;
+	char* dbox_id;
 	int open_app;
 	int index;
 	Evas_Object *obj;
@@ -115,6 +117,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos);
 
 static void _get_resource(const char *file_in, char *file_path_out, int file_path_max)
 {
+	_ENTER;
 	char *res_path = app_get_resource_path();
 	if (res_path) {
 		snprintf(file_path_out, file_path_max, "%s%s", res_path, file_in);
@@ -123,25 +126,26 @@ static void _get_resource(const char *file_in, char *file_path_out, int file_pat
 }
 
 
-static inline struct info *find_item(widget_context_h id)
+static inline struct info *find_item(char* id)
 {
+	_ENTER;
 	struct info *item=NULL;
-/*
+
 	Eina_List *l;
 
 	EINA_LIST_FOREACH(s_list, l, item) {
-			//if (!strcmp(item->id, id)) {
-			if (item->id == id) {
+			_D("item->id:%s,id:%s",item->id,id);
+			if (!strncmp(item->id, id,sizeof(id))) {
 					return item;
 			}
 	}
-	*/
-	widget_app_context_get_tag(id, (void**) &item);
+	//widget_app_context_get_tag(id, (void**) &item);
 
 	return item;
 }
 
 bool _is_arabic(const char *lang){
+	_ENTER;
 	char lang_tmp[10] = { 0, };
 	char ar[3] = { 0, };
 	int i = 0;
@@ -161,6 +165,7 @@ bool _is_arabic(const char *lang){
 
 static void _init_theme(void)
 {
+	_ENTER;
 	theme = elm_theme_new();
 
 }
@@ -169,14 +174,16 @@ static void _init_theme(void)
 
 static void _fini_theme(void)
 {
+	_ENTER;
 	elm_theme_free(theme);
 	theme = NULL;
-	
+
 }
 
 #define LOCALE_LEN 32
 char *util_get_count_str_from_icu(int count)
 {
+	_ENTER;
 	char *p = NULL;
 	char *locale_tmp = NULL;
 	char *ret_str = NULL;
@@ -197,6 +204,7 @@ char *util_get_count_str_from_icu(int count)
 }
 PUBLIC int widget_initialize(const char *pkgname)
 {
+	_ENTER;
 	_D("dbox initialized");
 	/**
 	 * @TODO
@@ -208,6 +216,7 @@ PUBLIC int widget_initialize(const char *pkgname)
 
 PUBLIC int widget_finalize(void)
 {
+	_ENTER;
 	_D("dbox finalized");
 	/**
 	 * @TODO
@@ -220,14 +229,15 @@ PUBLIC int widget_finalize(void)
 
 
 // NOTE: This function is going to be invoked for release all resources
-static int widget_destroy(widget_context_h id, widget_app_destroy_type_e reason, bundle *content, void *user_data)
+static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *content, void *user_data)
 //PUBLIC int widget_destroy(const char *id)
 {
+	_ENTER;
 	struct info *item;
 	_D("[%s:%d]\n", __func__, __LINE__);
 
-	//item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 			/*!
 			 * \NOTE
@@ -257,18 +267,20 @@ static int widget_destroy(widget_context_h id, widget_app_destroy_type_e reason,
 	free(item->content);
 	free(item->id);
 	free(item);
+//	preference_unset_changed_cb(id);
 	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
 	return WIDGET_ERROR_NONE;
 }
 
-PUBLIC int widget_need_to_update(const widget_context_h id)
+PUBLIC int widget_need_to_update(const char* id)
 {
+	_ENTER;
 	struct info *item;
 
 	_D("[%s]\n", id);
 
-	//item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		/* Hmm, there is no matched instance. */
 		 _E("id is invalid");
@@ -280,7 +292,7 @@ PUBLIC int widget_need_to_update(const widget_context_h id)
 
 static void _glow_effect_done(void *data, Evas_Object *o, const char *emission, const char *source)
 {
-	_D("");
+	_ENTER;
 
 	elm_object_signal_emit((Evas_Object *)data, "complete_effect", "widget");
 
@@ -288,6 +300,7 @@ static void _glow_effect_done(void *data, Evas_Object *o, const char *emission, 
 }
 
 void app_shortcut_remove_package(const char *package){
+	_ENTER;
 	_D("remove %s", package);
 	Eina_List *l;
 	struct info *item;
@@ -349,6 +362,7 @@ int item_badge_count(struct object_info *item)
 #define MAX_BADGE_COUNT 999
 void item_badge_show(struct object_info *item, int count)
 {
+	_ENTER;
 	char *str = NULL;
 	char badge_signal[16];
 
@@ -382,6 +396,7 @@ void item_badge_show(struct object_info *item, int count)
 
 void item_badge_hide(struct object_info *item)
 {
+	_ENTER;
 	ret_if(!item);
 
 	elm_object_signal_emit(item->obj, "badge,off", "slot");
@@ -390,6 +405,7 @@ void item_badge_hide(struct object_info *item)
 
 static void _badge_change_cb(unsigned int action, const char *appid, unsigned int count, void *data)
 {
+	_ENTER;
 	unsigned int is_display = 0;
 	badge_error_e err = BADGE_ERROR_NONE;
 	int i = 0;
@@ -423,6 +439,7 @@ static void _badge_change_cb(unsigned int action, const char *appid, unsigned in
 
 void item_badge_register_changed_cb(void)
 {
+	_ENTER;
 	badge_error_e err;
 
 	err = badge_register_changed_cb(_badge_change_cb, NULL);
@@ -431,6 +448,7 @@ void item_badge_register_changed_cb(void)
 
 void item_badge_unregister_changed_cb(void)
 {
+	_ENTER;
 	badge_error_e err;
 
 	err = badge_unregister_changed_cb(_badge_change_cb);
@@ -440,17 +458,18 @@ void item_badge_unregister_changed_cb(void)
 
 static void _slot_l_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon clicked");
+	_ENTER;
 
 }
 
 static void _slot_r_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon clicked");
-
+	_ENTER;
 }
 
 static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon clicked");
-
+	_ENTER;
 
 	struct object_info *info = NULL;
 	info = data;
@@ -515,6 +534,7 @@ static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 
 char *_get_date(void)
 {
+	_ENTER;
 	struct tm st;
 	time_t tt = time(NULL);
 	localtime_r(&tt, &st);
@@ -531,11 +551,13 @@ char *_get_date(void)
 
 static void _slot_mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon mouse down");
+	_ENTER;
 	evas_object_color_set((Evas_Object *)data, 255, 255, 255, 127);
 }
 
 static void _slot_mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon mouse up");
+	_ENTER;
 	evas_object_color_set((Evas_Object *)data, 255, 255, 255, 255);
 }
 
@@ -852,12 +874,12 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 }
 
-PUBLIC int widget_update_content(const widget_context_h id)
+PUBLIC int widget_update_content(const char* id)
 {
 	_ENTER;
 	struct info *item;
-	//item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	int i = 0;
 	char *tmp = NULL;
 	char *first = NULL;
@@ -904,17 +926,18 @@ static char *_set_content_data(char *content, char *updated_data){
 }
 
 
-PUBLIC int widget_set_content_info(const widget_context_h id, bundle *b)
+PUBLIC int widget_set_content_info(const char* id, bundle *b)
 {
 	_ENTER;
+	_D("ID:%s",id);
 	struct info *item;
 	int ret = 0;
 	char uri[256] = {0};
 
 	_E("[%s]\n", id);
 
-	//item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
@@ -960,13 +983,14 @@ PUBLIC int widget_set_content_info(const widget_context_h id, bundle *b)
 	return WIDGET_ERROR_NONE;
 }
 
-PUBLIC int widget_clicked(const widget_context_h id, const char *event, double timestamp, double x, double y)
+PUBLIC int widget_clicked(const char* id, const char *event, double timestamp, double x, double y)
 {
 	_ENTER;
+	_D("ID:%s",id);
 	_D("dbox clicked");
 	struct info *item;
-//	item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
@@ -1074,17 +1098,19 @@ static struct object_info *_add_empty_slot(Evas_Object *parent, int pos, struct 
 	return info;
 }
 
-static Evas_Object *_create_win(widget_context_h context, int w, int h)
+static Evas_Object *_create_win(char* id, int w, int h)
 {
+	_ENTER;
+	_D("ID:%s",id);
 	Evas_Object *win = NULL;
 	int ret;
 
-	if (context == NULL) {
+	if (id == NULL) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "failed to get context.");
 		return NULL;
 	}
 
-	ret = widget_app_get_elm_win(context, &win);
+	ret = widget_app_get_elm_win(id, &win);
 	if (ret != WIDGET_ERROR_NONE) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "failed to get window. err = %d", ret);
 		return NULL;
@@ -1095,8 +1121,10 @@ static Evas_Object *_create_win(widget_context_h context, int w, int h)
 	return win;
 }
 
-static int widget_resize(widget_context_h id, int w, int h, void *user_data)
+static int widget_resize(char* id, int w, int h, void *user_data)
 {
+	_ENTER;
+	_D("ID:%s",id);
 	struct info *item;
 	int ret;
 	Evas_Object *layout = NULL;
@@ -1104,8 +1132,8 @@ static int widget_resize(widget_context_h id, int w, int h, void *user_data)
 	char *tmp = NULL;
 
 	//preference_remove_all();
-//	item = find_item((char*)id);
-	widget_app_context_get_tag(id,(void**)&item);
+	item = find_item((char*)id);
+	//widget_app_context_get_tag(id,(void**)&item);
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
@@ -1171,7 +1199,9 @@ static int widget_resize(widget_context_h id, int w, int h, void *user_data)
 //todo: item->content
 	//read from preference key, if not exist then load default app order string else, load the existing app order string
 	bool prefkey_exist = false;
+//	ret = preference_is_existing(id, &prefkey_exist);
 	ret = preference_is_existing(APP_WIDGET_CONTENT_KEY, &prefkey_exist);
+
 	if(ret !=PREFERENCE_ERROR_NONE)
 	{
 		_E("preference_is_existing api failed ret:%d ",ret);
@@ -1183,7 +1213,9 @@ static int widget_resize(widget_context_h id, int w, int h, void *user_data)
 		if(prefkey_exist)
 		{
 			_D("preference key is already exist");
+//			ret = preference_get_string(id, &item->content);
 			ret = preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
+
 			if(ret != PREFERENCE_ERROR_NONE)
 			{
 				_E("preference_get_string api failed, so load default app order ret:%d",ret);
@@ -1193,7 +1225,9 @@ static int widget_resize(widget_context_h id, int w, int h, void *user_data)
 		else
 		{
 			_E("preference_key is not exist. might be first boot so load default app order and store in preference key");
+//			ret = preference_set_string(id, DEFAULT_APP_ORDER);
 			ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
+
 			if(ret != PREFERENCE_ERROR_NONE)
 			{
 				_E("preference_set_string api failed ret:%d",ret);
@@ -1228,7 +1262,9 @@ void preference_changed_cb_impl(const char *key, void *user_data)
 {
 	_ENTER;
 //	int ret = 0;
-	widget_context_h *id= user_data;
+//	widget_context_h *id= user_data;
+	char *id= *((char**)user_data);
+	_D("id:%s,  key:%s",id,key);
 	struct info *item;
 	//preference_remove_all();
 	if(!id)
@@ -1236,24 +1272,29 @@ void preference_changed_cb_impl(const char *key, void *user_data)
 		_E("id is null");
 		return;
 	}
-//	item = find_item(*id);
-	widget_app_context_get_tag(*id, (void**) &item);
+	item = find_item(id);
+//	widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
 		_E("item is not found");
 		return;
 	}
 	_D("before content: %s",item->content);
-    preference_get_string(key, &item->content);
+//    preference_get_string(id, &item->content);
+    preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
+
     _D("after content: %s",item->content);
+
+	widget_update_content(id);
 
 	_EXIT;
 }
 
 // NOTE: This function is going to be invoked for initializing all resources
-static int widget_create(widget_context_h id, bundle *content, int w, int h, void *user_data)
+static int widget_create(char* id, bundle *content, int w, int h, void *user_data)
 {
-	_D("WIDGET is created\n");
+	_ENTER;
+	_D("WIDGET is created with id:%s\n",id);
 	struct info *info;
 
 	info = malloc(sizeof(*info));
@@ -1261,11 +1302,13 @@ static int widget_create(widget_context_h id, bundle *content, int w, int h, voi
 			return WIDGET_ERROR_OUT_OF_MEMORY;
 	}
 
-	info->id = id;
-//	if (!info->id) {
-//			free(info);
-//			return WIDGET_ERROR_OUT_OF_MEMORY;
-//	}
+//	info->id = id;
+	info->id = strdup(id);
+	_D("ID:%s",id);
+	if (!info->id) {
+			free(info);
+			return WIDGET_ERROR_OUT_OF_MEMORY;
+	}
 
 	//info->content = strdup(content);
 //	bundle_get_str(b,"test",&info->content);
@@ -1311,13 +1354,15 @@ static int widget_create(widget_context_h id, bundle *content, int w, int h, voi
 	 * You create the default output image from here now.
 	 * So you HAVE TO return WIDGET_OUTPUT_UPDATED
 	 */
-	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&id);
-	widget_app_context_set_tag(id, info);
-	//widget_resize(id,w, h, user_data);
+	//preference_set_changed_cb(id,preference_changed_cb_impl,id);
+	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&info->id);
+	//widget_app_context_set_tag(id, info);
+	widget_resize(id,w, h, user_data);
 	return WIDGET_ERROR_NONE;
 }
 PUBLIC int widget_need_to_create(const char *cluster, const char *category)
 {
+	_ENTER;
 	/**
 	 * @NOTE
 	 * You don't need implement this, if don't know what this is.
@@ -1326,12 +1371,13 @@ PUBLIC int widget_need_to_create(const char *cluster, const char *category)
 	return 0;
 }
 
-PUBLIC int widget_change_group(const widget_context_h id, const char *cluster, const char *category)
+PUBLIC int widget_change_group(const char* id, const char *cluster, const char *category)
 {
+	_ENTER;
 	struct info *item;
 
-	//item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
@@ -1357,8 +1403,9 @@ PUBLIC int widget_change_group(const widget_context_h id, const char *cluster, c
 	return WIDGET_ERROR_NONE;
 }
 
-PUBLIC int widget_need_to_destroy(const widget_context_h id)
+PUBLIC int widget_need_to_destroy(const char* id)
 {
+	_ENTER;
 	/**
 	 * @NOTE
 	 * You don't need implement this, if don't know what this is.
@@ -1371,12 +1418,13 @@ PUBLIC int widget_need_to_destroy(const widget_context_h id)
 	return 0;
 }
 
-PUBLIC char *widget_pinup(const widget_context_h id, int pinup)
+PUBLIC char *widget_pinup(const char* id, int pinup)
 {
+	_ENTER;
 	struct info *item;
 
-//	item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+//	widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
 			return NULL;
@@ -1385,12 +1433,14 @@ PUBLIC char *widget_pinup(const widget_context_h id, int pinup)
 	return strdup(item->content);
 }
 
-PUBLIC int widget_is_pinned_up(const widget_context_h id)
+PUBLIC int widget_is_pinned_up(const char* id)
 {
+	_ENTER;
+	_D("ID:%s",id);
 	struct info *item;
 
-//	item = find_item(id);
-	widget_app_context_get_tag(id, (void**) &item);
+	item = find_item(id);
+	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 			return WIDGET_ERROR_NOT_EXIST;
 	}
@@ -1417,7 +1467,7 @@ PUBLIC int widget_is_pinned_up(const widget_context_h id)
 
 void _set_app_label(struct object_info *obj)
 {
-
+	_ENTER;
 }
 
 
@@ -1440,33 +1490,37 @@ widget_app_region_changed(app_event_info_h event_info, void *user_data)
 }
 
 static int
-widget_pause(widget_context_h id, void *user_data)
+widget_pause(char* id, void *user_data)
 {
 	_ENTER;
+	_D("ID:%s",id);
 	/* Take necessary actions when widget instance becomes invisible. */
 	return WIDGET_ERROR_NONE;
 
 }
 
 static int
-widget_resume(widget_context_h id, void *user_data)
+widget_resume(char* id, void *user_data)
 {
 	/* Take necessary actions when widget instance becomes visible. */
 	_ENTER;
+	_D("ID:%s",id);
 	return WIDGET_ERROR_NONE;
 }
 
 static int
-widget_update(widget_context_h id, bundle *content,
+widget_update(char* id, bundle *content,
                              int force, void *user_data)
 {
 	_ENTER;
+	_D("ID:%s",id);
 	/* Take necessary actions when widget instance should be updated. */
 	return WIDGET_ERROR_NONE;
 }
 static widget_class_h
 widget_app_create(void *user_data)
 {
+	_ENTER;
 	/* Hook to take necessary actions before main event loop starts.
 	   Initialize UI resources.
 	   Make a class for widget instance.
@@ -1493,13 +1547,16 @@ widget_app_create(void *user_data)
 static void
 widget_app_terminate(void *user_data)
 {
+
 	/* Release all resources. */
 	_ENTER;
+
 }
 
 int
 main(int argc, char *argv[])
 {
+	_ENTER;
 	widget_app_lifecycle_callback_s ops = {0,};
 	int ret;
 

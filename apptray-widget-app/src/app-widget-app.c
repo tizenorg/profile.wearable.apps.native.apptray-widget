@@ -50,7 +50,7 @@
 #define DEFAULT_APP_ORDER "org.tizen.watch-setting empty empty empty"
 #define APPS_PKG "org.tizen.appptray-widget-app"
 
-#define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget-content"
+#define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
 
 typedef struct appdata {
 	Evas_Object *edit_win;
@@ -110,7 +110,7 @@ void updateContent()
 	{
 	snprintf(content, sizeof(content)-1, "%s %s %s %s", g_info->appid_list[0], g_info->appid_list[1], g_info->appid_list[2], g_info->appid_list[3]);
 
-	int ret = preference_set_string(APP_WIDGET_CONTENT_KEY, content);
+	int ret = preference_set_string(widget_id, content);
 	_D("content: %s updated to preference file: ret:%d",content,ret);
 
 	}
@@ -122,7 +122,7 @@ void updateContent()
 
 char *_get_date(void)
 {
-
+	_ENTER;
 	struct tm st;
 	time_t tt = time(NULL);
 	localtime_r(&tt, &st);
@@ -140,11 +140,13 @@ char *_get_date(void)
 
 static void _init_theme(void)
 {
+	_ENTER;
 	theme = elm_theme_new();
 }
 
 static void _fini_theme(void)
 {
+	_ENTER;
 	elm_theme_free(theme);
 	theme = NULL;
 	if (font_theme) {
@@ -154,6 +156,7 @@ static void _fini_theme(void)
 
 static Eina_Bool _key_release_cb(void *data, int type, void *event)
 {
+	_ENTER;
 	Evas_Event_Key_Up *ev = event;
 	retv_if(NULL == ev, ECORE_CALLBACK_PASS_ON);
 
@@ -175,7 +178,7 @@ static Eina_Bool _key_release_cb(void *data, int type, void *event)
 }
 
 static void _terminate_add_to_shortcut(void){
-	_D("");
+	_ENTER;
 
 	appdata_s *info = _get_info();
 	int i = 0;
@@ -191,8 +194,8 @@ static void _terminate_add_to_shortcut(void){
 
 		bundle_add_str(b, "test", "delete");
 		updateContent();
-		//ret = widget_service_trigger_update(APP-WIDGET-PKGID, widget_id, b, 1);
-		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
+//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app-widget widget trigger failed %d", ret);
 		}
@@ -216,9 +219,10 @@ static void _terminate_add_to_shortcut(void){
 		snprintf(content, sizeof(content)-1, "%s %s %s %s", g_info->appid_list[0], g_info->appid_list[1], g_info->appid_list[2], g_info->appid_list[3]);
 		bundle_add_str(b, "test", content);
 		_D("content : %s", content);
-		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+
 		updateContent();
-		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
+//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app widget widget trigger failed %d", ret);
@@ -243,6 +247,7 @@ static void _terminate_add_to_shortcut(void){
 
 static void _create_edit_win(appdata_s *info, const char *name, const char *title)
 {
+	_ENTER;
 	info->edit_win = elm_win_add(NULL, name, ELM_WIN_BASIC);
 	ret_if(!info->edit_win);
 	evas_object_color_set(info->edit_win, 0, 0, 0, 0);
@@ -257,6 +262,7 @@ static void _create_edit_win(appdata_s *info, const char *name, const char *titl
 
 static void _create_select_win(appdata_s *info, const char *name, const char *title)
 {
+	_ENTER;
 	info->select_win = elm_win_add(NULL, name, ELM_WIN_BASIC);
 	ret_if(!info->select_win);
 
@@ -271,6 +277,7 @@ static void _create_select_win(appdata_s *info, const char *name, const char *ti
 }
 
 static Eina_Bool _longpress_timer_cb(void *data){
+	_ENTER;
 	Evas_Object *item = NULL;
 	char index[10] = {0};
 	snprintf(index, sizeof(index)-1, "index%d", pressed_index);
@@ -284,6 +291,7 @@ static Eina_Bool _longpress_timer_cb(void *data){
 }
 
 static void _render_post_cb(void *data, Evas *e , void *event_info){
+	_ENTER;
 	_D("render finished");
 	Evas_Object *slot = (Evas_Object *)data;
 
@@ -292,6 +300,7 @@ static void _render_post_cb(void *data, Evas *e , void *event_info){
 }
 
 static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+	_ENTER;
 
 	_D("icon clicked");
 
@@ -313,18 +322,21 @@ static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, 
 
 static void _mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon mouse down");
+	_ENTER;
 	Evas_Object *icon = elm_object_part_content_get((Evas_Object *)data, "icon");
 	evas_object_color_set(icon, 255, 255, 255, 127);
 }
 
 static void _mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon mouse up");
+	_ENTER;
 	Evas_Object *icon = elm_object_part_content_get((Evas_Object *)data, "icon");
 	evas_object_color_set(icon, 255, 255, 255, 255);
 }
 
 static void _plus_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("plus clicked");
+	_ENTER;
 	if(launch_flag == EINA_FALSE){
 		launch_flag = EINA_TRUE;
 		return;
@@ -335,16 +347,19 @@ static void _plus_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 }
 
 static void _del_mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+	_ENTER;
 	_D("del mouse down");
 	elm_object_signal_emit((Evas_Object *)data, "pressed", "slot");
 }
 
 static void _del_mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+	_ENTER;
 	_D("del mouse up");
 	elm_object_signal_emit((Evas_Object *)data, "released", "slot");
 }
 
 static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+	_ENTER;
 	_D("del mouse clicked");
 
 	char index[10] = {0};
@@ -443,6 +458,7 @@ static void _down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void _transit_del_cb(void *data, Elm_Transit *transit){
+	_ENTER;
 	_D("transit end");
 	char index[10] = {0};
 	snprintf(index, sizeof(index)-1, "index%d", pressed_index);
@@ -454,6 +470,7 @@ static void _transit_del_cb(void *data, Elm_Transit *transit){
 }
 
 static void _anim_switch_item(Evas_Object *item, int src, int dst){
+	_ENTER;
 	if(transit_go == EINA_TRUE) return;
 	transit_go = EINA_TRUE;
 	Elm_Transit *transit = elm_transit_add();
@@ -508,6 +525,7 @@ static void _anim_switch_item(Evas_Object *item, int src, int dst){
 
 static void _move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+	_ENTER;
 	Evas_Event_Mouse_Move *ev = event_info;
 	int cur_x, cur_y;
 	char *tmp = NULL;
@@ -616,6 +634,7 @@ static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
 
 	icon = evas_object_image_add(evas_object_evas_get(page));
 	evas_object_repeat_events_set(icon, EINA_TRUE);
+	_D("icon:%s ,name:%s",item_info->icon,item_info->name);
 	evas_object_image_file_set(icon, item_info->icon, NULL);
 	evas_object_image_filled_set(icon, EINA_TRUE);
 	evas_object_show(icon);
@@ -633,7 +652,7 @@ static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
 }
 
 void app_shortcut_show_name(Evas_Object *page){
-
+	_ENTER;
 	appdata_s *info = _get_info();
 	item_info_s *item_info = NULL;
 	item_info = evas_object_data_get(page, "p_i_n");
@@ -651,7 +670,7 @@ void app_shortcut_show_name(Evas_Object *page){
 }
 
 void app_shortcut_hide_name(){
-
+	_ENTER;
 	appdata_s *info = _get_info();
 	if(hide_flag == EINA_FALSE){
 		_D("hide app name");
@@ -662,6 +681,7 @@ void app_shortcut_hide_name(){
 }
 #ifdef TIZEN_SDK
 Evas_Object *_set_app_slot(const char *appid, int pos){
+	_ENTER;
 	package_info_h appinfo_h = NULL;
 	_D("%s", appid);
 	char *icon_path_tmp = NULL;
@@ -812,7 +832,7 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 			} else {
 				icon_path_tmp = strdup(DEFAULT_ICON);
 			}
-	
+
 
 		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)){
 			_E("get label failed");
@@ -866,6 +886,7 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 }
 #endif
 static void _create_edit_layout(appdata_s *info){
+	_ENTER;
 	int ret = 0;
 	Evas_Object *layout = NULL;
 	layout = elm_layout_add(info->edit_win);
@@ -887,6 +908,7 @@ static void _create_edit_layout(appdata_s *info){
 
 
 static void _create_layout(appdata_s *info){
+	_ENTER;
 	Evas_Object *layout = NULL;
 	int ret = 0;
 	Eina_List *item_info_list = NULL;
@@ -929,7 +951,7 @@ static void _create_layout(appdata_s *info){
 	info->scroller = scroller;
 	elm_object_part_content_set(layout, "scroller", scroller);
 
-	
+
 	evas_object_show(scroller);
 	_D("scroller create done");
 	/* get apps list */
@@ -975,6 +997,7 @@ static void _create_layout(appdata_s *info){
 
 void apps_item_info_destroy(item_info_s *item_info)
 {
+	_ENTER;
 	ret_if(!item_info);
 
 	if (item_info->pkgid) free(item_info->pkgid);
@@ -987,7 +1010,7 @@ void apps_item_info_destroy(item_info_s *item_info)
 
 item_info_s *apps_apps_info_create(const char *appid)
 {
-
+	_ENTER;
 	item_info_s *item_info = NULL;
 	#ifdef TIZEN_SDK
 	package_info_h appinfo_h = NULL;
@@ -1034,7 +1057,7 @@ item_info_s *apps_apps_info_create(const char *appid)
 		goto_if(NULL == item_info->pkgid, ERROR);
 	}
 #endif
-	
+
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);
 
@@ -1088,7 +1111,7 @@ ERROR:
 
 item_info_s *apps_recent_info_create(const char *appid)
 {
-
+	_ENTER;
 	item_info_s *item_info = NULL;
 	#ifdef TIZEN_SDK
 	package_info_h appinfo_h = NULL;
@@ -1117,6 +1140,7 @@ item_info_s *apps_recent_info_create(const char *appid)
 	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &name), ERROR);
 	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_icon(appinfo_h, &icon), ERROR);
 	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &type), ERROR);
+	item_info->pkgid = strdup(appid);
 	#else
 	goto_if(0 > pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &name), ERROR);
@@ -1134,7 +1158,7 @@ item_info_s *apps_recent_info_create(const char *appid)
 		goto_if(NULL == item_info->pkgid, ERROR);
 	}
 	#endif
-	item_info->pkgid = strdup(appid);
+
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);
 
@@ -1178,7 +1202,7 @@ item_info_s *apps_recent_info_create(const char *appid)
 
 ERROR:
 	apps_item_info_destroy(item_info);
-	
+
 	#ifdef TIZEN_SDK
 	if (appinfo_h) package_info_destroy(appinfo_h);
 	#else
@@ -1270,6 +1294,7 @@ ERROR:
 
 item_info_s *apps_item_info_create(const char *appid)
 {
+	_ENTER;
 	item_info_s *item_info = NULL;
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	pkgmgrinfo_pkginfo_h pkghandle = NULL;
@@ -1293,6 +1318,7 @@ item_info_s *apps_item_info_create(const char *appid)
 
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &name), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon), ERROR);
+	_D("name:%s, icon:%s",name,icon);
 
 	do {
 		break_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_pkgid(appinfo_h, &pkgid));
@@ -1309,7 +1335,7 @@ item_info_s *apps_item_info_create(const char *appid)
 	if (!enabled) goto ERROR;
 
 	goto_if(PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type), ERROR);
-	
+
 	if (pkgid) {
 		item_info->pkgid = strdup(pkgid);
 		goto_if(NULL == item_info->pkgid, ERROR);
@@ -1339,7 +1365,7 @@ item_info_s *apps_item_info_create(const char *appid)
 		}
 	}
 
-	
+
 		if (icon) {
 			if (strlen(icon) > 0) {
 				item_info->icon = strdup(icon);
@@ -1352,7 +1378,7 @@ item_info_s *apps_item_info_create(const char *appid)
 			item_info->icon = strdup(DEFAULT_ICON);
 			goto_if(NULL == item_info->icon, ERROR);
 		}
-	
+
 
 	item_info->removable = removable;
 
@@ -1373,6 +1399,7 @@ ERROR:
 
 static int _apps_sort_cb(const void *d1, const void *d2)
 {
+	_ENTER;
 	item_info_s *tmp1 = (item_info_s *) d1;
 	item_info_s *tmp2 = (item_info_s *) d2;
 
@@ -1437,7 +1464,7 @@ static Eina_List *_read_all_apps(Eina_List **list)
 		_E("Error in package_manager_filter_foreach_package_info ret:%d",ret);
 		goto ERROR;
 	}
-	
+
 	*list = eina_list_sort(*list, eina_list_count(*list), _apps_sort_cb);
 
 ERROR:
@@ -1450,6 +1477,7 @@ ERROR:
 #else
 static int _apps_all_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 {
+	_ENTER;
 	Eina_List **list = user_data;
 	char *appid = NULL;
 	item_info_s *item_info = NULL;
@@ -1458,6 +1486,7 @@ static int _apps_all_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 	retv_if(NULL == user_data, 0);
 
 	pkgmgrinfo_appinfo_get_appid(handle, &appid);
+	_D("appid:%s",appid);
 	retv_if(NULL == appid, 0);
 
 	item_info = apps_item_info_create(appid);
@@ -1473,6 +1502,7 @@ static int _apps_all_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 
 static Eina_List *_read_all_apps(Eina_List **list)
 {
+	_ENTER;
 	pkgmgrinfo_appinfo_filter_h handle = NULL;
 
 	retv_if(PMINFO_R_OK != pkgmgrinfo_appinfo_filter_create(&handle), NULL);
@@ -1504,12 +1534,14 @@ void create_add_to_shortcut(const char *widget_name, const char *index){
 static void
 app_pause(void *data)
 {
+	_ENTER;
 	_D("check");
 }
 
 static void
 app_terminate(void *data)
 {
+	_ENTER;
 	_D("check");
 	_fini_theme();
 	feedback_deinitialize();
@@ -1518,11 +1550,13 @@ app_terminate(void *data)
 static void
 app_resume(void *data)
 {
+	_ENTER;
 	_D("check");
 }
 
 static void app_control(app_control_h service, void *data)
 {
+	_ENTER;
 	_D("test");
 	char *content = NULL;
 
@@ -1548,8 +1582,17 @@ static void app_control(app_control_h service, void *data)
 	//content = strdup(DEFAULT_APP_ORDER);
 	//todo: content
 	//read from preference key, if not exist then load default app order string else, load the existing app order string
+	char *instance_id = NULL;
+	ret = app_control_get_extra_data(service, "instance_id", &instance_id);
+	if(!ret)
+	{
+		_E("widget id is null check");
+	}
+	//todo: change this when whome is able to fetch widget instance id.
+	//widget_id = strdup(instance_id);
+	widget_id = strdup(APP_WIDGET_CONTENT_KEY);
 	bool prefkey_exist = false;
-	ret = preference_is_existing(APP_WIDGET_CONTENT_KEY, &prefkey_exist);
+	ret = preference_is_existing(widget_id, &prefkey_exist);
 	if(ret !=PREFERENCE_ERROR_NONE)
 	{
 		_E("preference_is_existing api failed ret:%d ",ret);
@@ -1561,7 +1604,7 @@ static void app_control(app_control_h service, void *data)
 		if(prefkey_exist)
 		{
 			_D("preference key is already exist");
-			ret = preference_get_string(APP_WIDGET_CONTENT_KEY, &content);
+			ret = preference_get_string(widget_id, &content);
 			if(ret != PREFERENCE_ERROR_NONE)
 			{
 				_E("preference_get_string api failed, so load default app order ret:%d",ret);
@@ -1571,7 +1614,7 @@ static void app_control(app_control_h service, void *data)
 		else
 		{
 			_E("preference_key is not exist. check why key is not present. key should present always");
-			ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
+			ret = preference_set_string(widget_id, DEFAULT_APP_ORDER);
 			if(ret != PREFERENCE_ERROR_NONE)
 			{
 				_E("preference_set_string api failed ret:%d",ret);
@@ -1629,8 +1672,9 @@ static void app_control(app_control_h service, void *data)
 
 		bundle_add_str(b, "test", tmp);
 		_D("content : %s", tmp);
-		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
-		ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
+
+//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app-widget trigger failed %x", ret);
 		}
@@ -1647,6 +1691,7 @@ static void app_control(app_control_h service, void *data)
 				_set_app_slot(strtok_r(NULL, " ",&save), i);
 			}
 		}
+		updateContent();
 	}
 
 	free(content);
@@ -1657,6 +1702,7 @@ static void app_control(app_control_h service, void *data)
 static void
 ui_app_lang_changed(app_event_info_h event_info, void *user_data)
 {
+	_ENTER;
 	/*APP_EVENT_LANGUAGE_CHANGED*/
 	char *locale = NULL;
 	system_settings_get_value_string(SYSTEM_SETTINGS_KEY_LOCALE_LANGUAGE, &locale);
@@ -1668,6 +1714,7 @@ ui_app_lang_changed(app_event_info_h event_info, void *user_data)
 static void
 ui_app_orient_changed(app_event_info_h event_info, void *user_data)
 {
+	_ENTER;
 	/*APP_EVENT_DEVICE_ORIENTATION_CHANGED*/
 	return;
 }
@@ -1675,23 +1722,27 @@ ui_app_orient_changed(app_event_info_h event_info, void *user_data)
 static void
 ui_app_region_changed(app_event_info_h event_info, void *user_data)
 {
+	_ENTER;
 	/*APP_EVENT_REGION_FORMAT_CHANGED*/
 }
 
 static void
 ui_app_low_battery(app_event_info_h event_info, void *user_data)
 {
+	_ENTER;
 	/*APP_EVENT_LOW_BATTERY*/
 }
 
 static void
 ui_app_low_memory(app_event_info_h event_info, void *user_data)
 {
+	_ENTER;
 	/*APP_EVENT_LOW_MEMORY*/
 }
 
 static bool app_create(void *data)
 {
+	_ENTER;
 	_D("check");
 	appdata_s *info = data;
 
@@ -1700,10 +1751,10 @@ static bool app_create(void *data)
 	_create_select_win(info, "__SELECT_LIST__", "_SELECT_LIST__");
 	_init_theme();
 	feedback_initialize();
-	
+
 	_create_edit_layout(info);
 	evas_object_show(info->edit_win);
-	
+
 
 	g_info->release_handler = ecore_event_handler_add(ECORE_EVENT_KEY_UP, _key_release_cb, NULL);
 	return true;
@@ -1711,6 +1762,7 @@ static bool app_create(void *data)
 
 int main(int argc, char *argv[])
 {
+	_ENTER;
 	_D("check");
 	appdata_s ad = {0,};
 		int ret = 0;

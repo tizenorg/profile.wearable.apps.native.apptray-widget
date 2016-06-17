@@ -99,6 +99,7 @@ static const char *_index_style_get(int index, int even)
 
 HAPI void home_custom_index_bring_in_page(Evas_Object *index, Evas_Object *page)
 {
+	_ENTER;
 	Elm_Object_Item *idx_it = NULL;
 	const Eina_List *l = NULL;
 	hc_index_info_s *index_info = NULL;
@@ -138,6 +139,7 @@ HAPI void home_custom_index_bring_in_page(Evas_Object *index, Evas_Object *page)
 
 HAPI Evas_Object *home_custom_index_create(Evas_Object *parent, Evas_Object *scroller)
 {
+	_ENTER;
 	Evas_Object *index = NULL;
 	hc_index_info_s *index_info = NULL;
 
@@ -173,6 +175,7 @@ HAPI Evas_Object *home_custom_index_create(Evas_Object *parent, Evas_Object *scr
 
 HAPI void home_custom_index_destroy(Evas_Object *index)
 {
+	_ENTER;
 	hc_index_info_s *index_info = NULL;
 	page_index_s *page_index = NULL;
 
@@ -198,6 +201,7 @@ HAPI void home_custom_index_destroy(Evas_Object *index)
 #define MAX_INDEX_NUMBER 20
 static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_List *list)
 {
+	_ENTER;
 	Evas_Object *page = NULL;
 	const Eina_List *l = NULL;
 
@@ -241,7 +245,7 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 		style_base = (MAX_INDEX_NUMBER/2) - (total_inserted / 2) - 1;
 	}
 	_D("style even:%d,style base:%d",style_even,style_base);
-	
+
 	EINA_LIST_FOREACH(list, l, page) {
 		if (index_number < total_inserted) {
 			if (!cur_inserted) {
@@ -249,7 +253,7 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 			}
 
 			cur_inserted++;
-			
+
 #ifdef RUN_ON_DEVICE
 			Elm_Object_Item *idx_it  = elm_index_item_append(index, NULL, NULL, (void *) index_number);
 			elm_object_item_style_set(idx_it, _index_style_get(style_base + index_number, style_even));
@@ -284,6 +288,7 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 
 HAPI void home_custom_index_update(Evas_Object *index, Evas_Object *scroller, hc_index_bring_in_e after)
 {
+	_ENTER;
 	Evas_Object *page_current = NULL;
 	Eina_List *page_list = NULL;
 
@@ -319,6 +324,7 @@ HAPI void home_custom_index_update(Evas_Object *index, Evas_Object *scroller, hc
 
 static Eina_Bool _index_hide_timer_cb(void *data)
 {
+	_ENTER;
 	Evas_Object *index = (Evas_Object*)data;
 	retv_if(!index, ECORE_CALLBACK_CANCEL);
 
@@ -340,6 +346,7 @@ static Eina_Bool _index_hide_timer_cb(void *data)
 
 HAPI void home_custom_index_show(Evas_Object *index, Eina_Bool bAutoHide)
 {
+	_ENTER;
 	Ecore_Timer *timer = NULL;
 
 	ret_if(!index);
