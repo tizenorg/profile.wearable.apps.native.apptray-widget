@@ -984,7 +984,7 @@ static void _create_layout(appdata_s *info){
 	eina_list_free(item_info_list);
 
 	page = home_custom_scroller_get_current_page(scroller);
-	elm_object_signal_emit(page, "focus_out_effect", "item");
+	//elm_object_signal_emit(page, "focus_out_effect", "item");
 
 	Evas_Object *index = home_custom_scroller_index_add(layout, scroller);
 	if(!index) return;
