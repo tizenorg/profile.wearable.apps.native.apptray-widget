@@ -35,8 +35,6 @@ typedef struct {
 
 #define INDEX_EVEN_ITEM_NUM 20
 #define INDEX_ODD_ITEM_NUM 19
-
-#if 0
 static const char *_index_style_get(int index, int even)
 {
 	static const char g_it_style_odd[INDEX_ODD_ITEM_NUM][20] = {
@@ -94,7 +92,6 @@ static const char *_index_style_get(int index, int even)
 		return g_it_style_odd[index];
 	}
 }
-#endif
 
 
 HAPI void home_custom_index_bring_in_page(Evas_Object *index, Evas_Object *page)
@@ -203,6 +200,7 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 {
 	_ENTER;
 	Evas_Object *page = NULL;
+	Elm_Object_Item *idx_it = NULL;
 	const Eina_List *l = NULL;
 
 	hc_index_info_s *index_info = NULL;
@@ -253,9 +251,8 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 			}
 
 			cur_inserted++;
-
+			idx_it = elm_index_item_append(index, NULL, NULL, (void *) index_number);
 #ifdef RUN_ON_DEVICE
-			Elm_Object_Item *idx_it  = elm_index_item_append(index, NULL, NULL, (void *) index_number);
 			elm_object_item_style_set(idx_it, _index_style_get(style_base + index_number, style_even));
 #endif
 			index_number++;
