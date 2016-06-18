@@ -1174,7 +1174,7 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 		LOGE("failed to set layout");
 		return WIDGET_ERROR_FAULT;
 	}
-	_W("content : %s", item->content);
+
 
 	evas_object_size_hint_weight_set(layout, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_resize(layout, w, h);
