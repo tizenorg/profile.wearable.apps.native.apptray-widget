@@ -144,6 +144,41 @@ static inline struct info *find_item(char* id)
 	return item;
 }
 
+
+
+void preference_changed_cb_impl(const char *key, void *user_data)
+{
+	_ENTER;
+//	int ret = 0;
+//	widget_context_h *id= user_data;
+	char *id= *((char**)user_data);
+	_D("id:%s,  key:%s",id,key);
+	struct info *item;
+	//preference_remove_all();
+	if(!id)
+	{
+		_E("id is null");
+		return;
+	}
+	item = find_item(id);
+//	widget_app_context_get_tag(id, (void**) &item);
+	if (!item) {
+		 _E("id is invalid");
+		_E("item is not found");
+		return;
+	}
+	_D("before content: %s",item->content);
+//    preference_get_string(id, &item->content);
+    preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
+
+    _D("after content: %s",item->content);
+
+	widget_update_content(id);
+
+	_EXIT;
+}
+
+
 bool _is_arabic(const char *lang){
 	_ENTER;
 	char lang_tmp[10] = { 0, };
@@ -264,6 +299,8 @@ static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *co
 	if (item->dbox_win) {
 			evas_object_del(item->dbox_win);
 	}
+       item->first_loaded = 0;
+       item->w= item->h=0;
 	free(item->content);
 	free(item->id);
 	free(item);
@@ -1134,6 +1171,13 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	//preference_remove_all();
 	item = find_item((char*)id);
 	//widget_app_context_get_tag(id,(void**)&item);
+
+	if( item->first_loaded && w == item->w && h == item->h)
+	{
+		_E("no need to update");
+		return WIDGET_ERROR_NONE;
+	}
+	item->first_loaded = 1;
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
@@ -1186,8 +1230,6 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	evas_object_show(item->dbox_win);
 	_D("win show");
 
-
-	_D("item->content:%s",item->content);
 	_D("empty dbox created");
 	/* load index layout */
 	item->obj[0] = _add_empty_slot(layout, 1, item);
@@ -1205,6 +1247,11 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	{
 		_E("preference_is_existing api failed ret:%d ",ret);
 		item->content = strdup(DEFAULT_APP_ORDER);
+		ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
+		if(ret != PREFERENCE_ERROR_NONE)
+		{
+			_E("preference_set_string api failed ret:%d",ret);
+		}
 	}
 	else
 	{
@@ -1235,6 +1282,8 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 		}
 	}
 	_D("item->content :%s",item->content);
+	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
+	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&item->id);
 //todo: by any chance content string is lost, we should load default apps. this has to be handle
 	tmp = strdup(item->content);
 	char *first = NULL;
@@ -1255,38 +1304,6 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	item->w =w;
 	item->h = h;
 	 return WIDGET_ERROR_NONE;
-}
-
-void preference_changed_cb_impl(const char *key, void *user_data)
-{
-	_ENTER;
-//	int ret = 0;
-//	widget_context_h *id= user_data;
-	char *id= *((char**)user_data);
-	_D("id:%s,  key:%s",id,key);
-	struct info *item;
-	//preference_remove_all();
-	if(!id)
-	{
-		_E("id is null");
-		return;
-	}
-	item = find_item(id);
-//	widget_app_context_get_tag(id, (void**) &item);
-	if (!item) {
-		 _E("id is invalid");
-		_E("item is not found");
-		return;
-	}
-	_D("before content: %s",item->content);
-//    preference_get_string(id, &item->content);
-    preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
-
-    _D("after content: %s",item->content);
-
-	widget_update_content(id);
-
-	_EXIT;
 }
 
 // NOTE: This function is going to be invoked for initializing all resources
@@ -1328,7 +1345,7 @@ static int widget_create(char* id, bundle *content, int w, int h, void *user_dat
 	info->size_type = WIDGET_SIZE_TYPE_UNKNOWN;
 	s_list = eina_list_append(s_list, info);
 	info->need_to_delete = 0;
-	info->first_loaded = 1;
+	info->first_loaded = 0;
 
 	/**
 	 * @NOTE
@@ -1354,7 +1371,7 @@ static int widget_create(char* id, bundle *content, int w, int h, void *user_dat
 	 * So you HAVE TO return WIDGET_OUTPUT_UPDATED
 	 */
 	//preference_set_changed_cb(id,preference_changed_cb_impl,id);
-	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&info->id);
+
 	//widget_app_context_set_tag(id, info);
 	widget_resize(id,w, h, user_data);
 	return WIDGET_ERROR_NONE;
