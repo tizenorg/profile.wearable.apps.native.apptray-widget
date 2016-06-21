@@ -37,7 +37,7 @@
 #include "item_info.h"
 #include "elm_layout_legacy.h"
 
-#define IDS_IDLE_BODY_APPS "apps"
+#define IDS_IDLE_BODY_APPS "Apps"
 #define EDJE_FILE "edje/add_to_shortcut.edj"
 
 #define SCHEDULE_ICON_ARABIC "res/schedule_arabic_%s.png"
@@ -47,8 +47,8 @@
 #define APP_WIDGET_PKGID "org.tizen.app-widget"
 
 
-#define DEFAULT_APP_ORDER "org.tizen.watch-setting empty empty empty"
-#define APPS_PKG "org.tizen.appptray-widget-app"
+#define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
+#define APPS_PKG "org.tizen.apptray-widget-app"
 
 #define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
 
@@ -956,8 +956,8 @@ static void _create_layout(appdata_s *info){
 	_D("scroller create done");
 	/* get apps list */
 	item_info_list = g_info->app_list;
-	//todo : check why this is required
-#if 0
+
+	//Handle AppsUI case
 	item_info_s *apps_item_info = NULL;
 	Evas_Object *apps_item = NULL;
 	g_info->item_list = NULL;
@@ -972,7 +972,7 @@ static void _create_layout(appdata_s *info){
 		apps_item = _create_item(scroller, apps_item_info);
 		g_info->item_list = eina_list_append(g_info->item_list, apps_item);
 	}
-#endif
+
 	Eina_List *l = NULL;
 	Eina_List *n = NULL;
 	EINA_LIST_FOREACH_SAFE(item_info_list, l, n, item_info) {
@@ -1314,7 +1314,10 @@ item_info_s *apps_item_info_create(const char *appid)
 		return NULL;
 	}
 
-	goto_if(0 > pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h), ERROR);
+	int error = pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h);
+	_D("AppTrayError Error = %d, AppID=%s", error, appid);
+	goto_if(0 > error, ERROR);
+
 
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &name), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon), ERROR);
@@ -1328,18 +1331,21 @@ item_info_s *apps_item_info_create(const char *appid)
 		break_if(NULL == pkghandle);
 	} while (0);
 
-	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_nodisplay(appinfo_h, &nodisplay), ERROR);
-	if (nodisplay) goto ERROR;
+	if(appid != APPS_PKG){
+		goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_nodisplay(appinfo_h, &nodisplay), ERROR);
+		if (nodisplay) goto ERROR;
 
-	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_enabled(appinfo_h, &enabled), ERROR);
-	if (!enabled) goto ERROR;
+		goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_enabled(appinfo_h, &enabled), ERROR);
+		if (!enabled) goto ERROR;
 
-	goto_if(PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type), ERROR);
+		goto_if(PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type), ERROR);
+	}
 
 	if (pkgid) {
 		item_info->pkgid = strdup(pkgid);
 		goto_if(NULL == item_info->pkgid, ERROR);
 	}
+
 
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);

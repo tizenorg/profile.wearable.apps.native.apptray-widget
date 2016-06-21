@@ -64,8 +64,10 @@
 #define VCONFKEY_WMS_HOST_STATUS_VENDOR "db/wms/host_status/vendor"
 #define APP_TYPE_WGT "wgt"
 #define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
+#define APP_LAUNCH_KEY "launch_apps"
+ #define WHOME_APP_CONTROL "home_op"
 
-#define DEFAULT_APP_ORDER "org.tizen.watch-setting empty empty empty"
+#define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
 
 static Eina_List *s_list;
 //int errno;
@@ -496,7 +498,6 @@ void item_badge_unregister_changed_cb(void)
 static void _slot_l_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon clicked");
 	_ENTER;
-
 }
 
 static void _slot_r_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
@@ -512,16 +513,17 @@ static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 	info = data;
 	if(!strcmp(info->appid, APPS_PKG)){
 		app_control_h service = NULL;
-		char *type = "launch_apps";
+		char *type = APP_LAUNCH_KEY;
 
 		ret_if(APP_CONTROL_ERROR_NONE != app_control_create(&service));
 		ret_if(NULL == service);
 
 		app_control_set_operation(service, APP_CONTROL_OPERATION_DEFAULT);
-		app_control_set_app_id(service, "WHOME_PKG");
-		app_control_add_extra_data(service, "home_op", type);
+		app_control_set_app_id(service, WHOME_PKG);
+		app_control_add_extra_data(service, WHOME_APP_CONTROL, type);
 
 		int ret = app_control_send_launch_request(service, NULL, NULL);
+		_D("Send Launch Request = %d", ret);
 		if (APP_CONTROL_ERROR_NONE != ret) {
 			LOGE("error");
 			app_control_destroy(service);
