@@ -7,7 +7,7 @@
 		<support-size preview="/usr/apps/org.tizen.apptray-widget/shared/res/apps_widget_preview.png">2x2</support-size>
 	</widget-application>
     <ui-application appid="org.tizen.apptray-widget-app" exec="apptray-widget-app" multiple="false" nodisplay="true" taskmanage="true" type="capp">
-        <label>app shortcuts</label>
+        <label>Apps</label>
         <icon>org.tizen.apptray-widget-app.png</icon>
     </ui-application>
     <privileges>
@@ -15,9 +15,8 @@
         <privilege>http://tizen.org/privilege/packagemanager.clearcache</privilege>
         <privilege>http://tizen.org/privilege/widget.viewer</privilege>
         <privilege>http://tizen.org/privilege/appmanager.launch</privilege>
-		<privilege>http://tizen.org/privilege/notification</privilege>
+	<privilege>http://tizen.org/privilege/notification</privilege>
         <privilege>http://tizen.org/privilege/power</privilege>
-        <privilege>http://tizen.org/privilege/appmanager.launch</privilege>
         <privilege>http://tizen.org/privilege/message.write</privilege>
         <privilege>http://tizen.org/privilege/message.read</privilege>
         <privilege>http://tizen.org/privilege/contact.read</privilege>
