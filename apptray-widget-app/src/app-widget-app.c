@@ -24,12 +24,8 @@
 #include <widget_service.h>
 #include <widget_errno.h>
 #include <feedback.h>
-#ifdef TIZEN_SDK
-#include <package_manager.h>
-#else
 #include <pkgmgr-info.h>
 #include <package-manager.h>
-#endif
 #include <bundle.h>
 #include "key.h"
 #include "util.h"
@@ -39,17 +35,12 @@
 
 #define IDS_IDLE_BODY_APPS "Apps"
 #define EDJE_FILE "edje/add_to_shortcut.edj"
-
 #define SCHEDULE_ICON_ARABIC "res/schedule_arabic_%s.png"
 #define LANGUAGE_ARABIC "ar"
-
 #define  PACKAGE_MANAGER_PKGINFO_PROP_NODISPALY  "PMINFO_PKGINFO_PROP_PACKAGE_NODISPLAY_SETTING"
 #define APP_WIDGET_PKGID "org.tizen.app-widget"
-
-
 #define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
 #define APPS_PKG "org.tizen.apptray-widget-app"
-
 #define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
 
 typedef struct appdata {
@@ -172,8 +163,6 @@ static Eina_Bool _key_release_cb(void *data, int type, void *event)
 			_terminate_add_to_shortcut();
 		}
 	}
-
-
 	return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -194,8 +183,6 @@ static void _terminate_add_to_shortcut(void){
 
 		bundle_add_str(b, "test", "delete");
 		updateContent();
-//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
-		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app-widget widget trigger failed %d", ret);
 		}
@@ -221,9 +208,6 @@ static void _terminate_add_to_shortcut(void){
 		_D("content : %s", content);
 
 		updateContent();
-//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
-		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
-
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app widget widget trigger failed %d", ret);
 		}
@@ -679,109 +663,6 @@ void app_shortcut_hide_name(){
 	}
 
 }
-#ifdef TIZEN_SDK
-Evas_Object *_set_app_slot(const char *appid, int pos){
-	_ENTER;
-	package_info_h appinfo_h = NULL;
-	_D("%s", appid);
-	char *icon_path_tmp = NULL;
-	int ret = 0;
-	Evas_Object *slot = NULL;
-	Evas_Object *icon = NULL;
-	char index[10] = {0};
-	snprintf(index, sizeof(index)-1, "index%d", pos+1);
-	char *label = NULL;
-
-	if(!strcmp(appid, "empty")){
-		slot = elm_layout_add(g_info->edit_layout);
-		char full_path[PATH_MAX] = { 0, };
-		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-		_D("full_path:%s",full_path);
-		ret = elm_layout_file_set(slot, full_path, "empty_slot");
-		if(ret == EINA_FALSE){
-			_E("failed to set empty slot");
-			return NULL;
-		}
-		evas_object_size_hint_weight_set(slot, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-		evas_object_resize(slot, 100, 100);
-
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_DOWN, _down_cb, slot);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, &pos);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_UP, _up_cb, slot);
-		elm_object_signal_callback_add(slot, "mouse_clicked", "*", _plus_mouse_clicked_cb, &pos);
-
-		elm_object_part_content_set(g_info->edit_layout, index, slot);
-		evas_object_show(slot);
-		g_info->appid_list[pos] = strdup(appid);
-		empty_count++;
-	}
-	else{
-		package_manager_get_package_info(appid, &appinfo_h);
-
-			if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_icon(appinfo_h, &icon_path_tmp)){
-				_E("get icon path failed");
-			}
-			if (icon_path_tmp) {
-				if (strlen(icon_path_tmp) > 0) {
-				} else {
-					icon_path_tmp = strdup(DEFAULT_ICON);
-				}
-			} else {
-				icon_path_tmp = strdup(DEFAULT_ICON);
-			}
-
-
-		if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &label)){
-			_E("get label failed");
-			g_info->applabel_list[pos] = strdup("");
-		}
-		else{
-			g_info->applabel_list[pos] = strdup(label);
-		}
-		_D("icon path in object info %s", icon_path_tmp);
-
-		slot = elm_layout_add(g_info->edit_layout);
-		char full_path[PATH_MAX] = { 0, };
-		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-		_D("full_path:%s",full_path);
-		ret = elm_layout_file_set(slot, full_path, "icon_slot");
-		if(ret == EINA_FALSE){
-			_E("failed to set empty slot");
-			if(icon_path_tmp)
-				free(icon_path_tmp);
-			return NULL;
-		}
-
-		evas_object_size_hint_weight_set(slot, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-		evas_object_resize(slot, 100, 100);
-		elm_object_part_content_set(g_info->edit_layout, index, slot);
-		evas_object_show(slot);
-
-		icon = evas_object_image_add(evas_object_evas_get(slot));
-		evas_object_repeat_events_set(icon, EINA_TRUE);
-		evas_object_image_file_set(icon, icon_path_tmp, NULL);
-		evas_object_image_filled_set(icon, EINA_TRUE);
-		evas_object_show(icon);
-
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_DOWN, _down_cb, slot);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, slot);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_UP, _up_cb, slot);
-
-		elm_object_signal_callback_add(slot, "del_mouse_down", "*", _del_mouse_down_cb, slot);
-		elm_object_signal_callback_add(slot, "del_mouse_up", "*", _del_mouse_up_cb, slot);
-		elm_object_signal_callback_add(slot, "del_mouse_clicked", "*", _del_mouse_clicked_cb, slot);
-		elm_object_signal_callback_add(slot, "del_mouse_clicked_icon", "*", _del_mouse_clicked_cb, slot);
-
-		elm_object_part_content_set(slot, "icon", icon);
-		elm_object_part_text_set(slot, "name", label);
-		evas_object_show(icon);
-		g_info->appid_list[pos] = strdup(appid);
-
-		if (appinfo_h) package_info_destroy(appinfo_h);
-	}
-	return slot;
-}
-#else
 
 Evas_Object *_set_app_slot(const char *appid, int pos){
 	_ENTER;
@@ -810,9 +691,9 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 		evas_object_resize(slot, 100, 100);
 
 		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_DOWN, _down_cb, slot);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, pos);
+		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, &pos);
 		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_UP, _up_cb, slot);
-		elm_object_signal_callback_add(slot, "mouse_clicked", "*", _plus_mouse_clicked_cb, pos);
+		elm_object_signal_callback_add(slot, "mouse_clicked", "*", _plus_mouse_clicked_cb, &pos);
 
 		elm_object_part_content_set(g_info->edit_layout, index, slot);
 		evas_object_show(slot);
@@ -884,7 +765,7 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 	}
 	return slot;
 }
-#endif
+
 static void _create_edit_layout(appdata_s *info){
 	_ENTER;
 	int ret = 0;
@@ -913,8 +794,6 @@ static void _create_layout(appdata_s *info){
 	int ret = 0;
 	Eina_List *item_info_list = NULL;
 	item_info_s *item_info = NULL;
-	Evas_Object *page = NULL;
-
 	layout = elm_layout_add(info->select_win);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
@@ -982,10 +861,6 @@ static void _create_layout(appdata_s *info){
 		g_info->item_list = eina_list_append(g_info->item_list, page_item);
 	}
 	eina_list_free(item_info_list);
-
-	page = home_custom_scroller_get_current_page(scroller);
-	//elm_object_signal_emit(page, "focus_out_effect", "item");
-
 	Evas_Object *index = home_custom_scroller_index_add(layout, scroller);
 	if(!index) return;
 
@@ -1012,14 +887,9 @@ item_info_s *apps_apps_info_create(const char *appid)
 {
 	_ENTER;
 	item_info_s *item_info = NULL;
-	#ifdef TIZEN_SDK
-	package_info_h appinfo_h = NULL;
-	#else
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	pkgmgrinfo_pkginfo_h pkghandle = NULL;
 	char *pkgid = NULL;
-	int support_mode = 0;
-	#endif
 
 	char *icon = NULL;
 	char *type = NULL;
@@ -1032,15 +902,6 @@ item_info_s *apps_apps_info_create(const char *appid)
 	if (NULL == item_info) {
 		return NULL;
 	}
-#ifdef TIZEN_SDK
-	goto_if(0 > package_manager_get_package_info(appid, &appinfo_h), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_icon(appinfo_h, &icon), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_type(appinfo_h, &type), ERROR);
-	if (appid) {
-		item_info->pkgid = strdup(appid);
-		goto_if(NULL == item_info->pkgid, ERROR);
-	}
-#else
 	goto_if(0 > pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon), ERROR);
 	do {
@@ -1056,7 +917,6 @@ item_info_s *apps_apps_info_create(const char *appid)
 		item_info->pkgid = strdup(pkgid);
 		goto_if(NULL == item_info->pkgid, ERROR);
 	}
-#endif
 
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);
@@ -1088,24 +948,15 @@ item_info_s *apps_apps_info_create(const char *appid)
 
 	item_info->removable = removable;
 
-	#ifdef TIZEN_SDK
-		package_info_destroy(appinfo_h);
-	#else
-		pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
+	pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
 	if (pkghandle) pkgmgrinfo_pkginfo_destroy_pkginfo(pkghandle);
-	#endif
 
 	return item_info;
 
 ERROR:
 	apps_item_info_destroy(item_info);
-	#ifdef TIZEN_SDK
-		package_info_destroy(appinfo_h);
-	#else
-		pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
+	pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
 	if (pkghandle) pkgmgrinfo_pkginfo_destroy_pkginfo(pkghandle);
-	#endif
-
 	return NULL;
 }
 
@@ -1113,15 +964,9 @@ item_info_s *apps_recent_info_create(const char *appid)
 {
 	_ENTER;
 	item_info_s *item_info = NULL;
-	#ifdef TIZEN_SDK
-	package_info_h appinfo_h = NULL;
-	#else
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	pkgmgrinfo_pkginfo_h pkghandle = NULL;
 	char *pkgid = NULL;
-	int support_mode = 0;
-	#endif
-
 	char *icon = NULL;
 	char *type = NULL;
 	char *name = NULL;
@@ -1135,13 +980,6 @@ item_info_s *apps_recent_info_create(const char *appid)
 		return NULL;
 	}
 
-	#ifdef TIZEN_SDK
-	goto_if(0 > package_manager_get_package_info(appid, &appinfo_h), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &name), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_icon(appinfo_h, &icon), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &type), ERROR);
-	item_info->pkgid = strdup(appid);
-	#else
 	goto_if(0 > pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &name), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon), ERROR);
@@ -1157,8 +995,6 @@ item_info_s *apps_recent_info_create(const char *appid)
 		item_info->pkgid = strdup(pkgid);
 		goto_if(NULL == item_info->pkgid, ERROR);
 	}
-	#endif
-
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);
 
@@ -1191,106 +1027,17 @@ item_info_s *apps_recent_info_create(const char *appid)
 	}
 
 	item_info->removable = removable;
-	#ifdef TIZEN_SDK
-	package_info_destroy(appinfo_h);
-	#else
 	pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
 	if (pkghandle) pkgmgrinfo_pkginfo_destroy_pkginfo(pkghandle);
-	#endif
-
 	return item_info;
 
 ERROR:
 	apps_item_info_destroy(item_info);
 
-	#ifdef TIZEN_SDK
-	if (appinfo_h) package_info_destroy(appinfo_h);
-	#else
 	pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
 	if (pkghandle) pkgmgrinfo_pkginfo_destroy_pkginfo(pkghandle);
-	#endif
 	return NULL;
 }
-#ifdef TIZEN_SDK
-item_info_s *apps_item_info_create(const char *appid)
-{
-	_ENTER;
-	item_info_s *item_info = NULL;
-	package_info_h appinfo_h = NULL;
-
-	char *name = NULL;
-	char *icon = NULL;
-	char *type = NULL;
-
-	bool nodisplay = false;
-	bool removable = false;
-
-	retv_if(!appid, NULL);
-
-	item_info = calloc(1, sizeof(item_info_s));
-	if (NULL == item_info) {
-		return NULL;
-	}
-	package_manager_get_package_info(appid, &appinfo_h);
-
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_label(appinfo_h, &name), ERROR);
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_icon(appinfo_h, &icon), ERROR);
-
-	if (nodisplay) goto ERROR;
-
-
-	goto_if(PACKAGE_MANAGER_ERROR_NONE != package_info_get_type(appinfo_h, &type), ERROR);
-
-
-	_D("name:%s,type:%s,icon:%s",name,type,icon);
-	item_info->pkgid = strdup(appid);
-	goto_if(NULL == item_info->pkgid, ERROR);
-	item_info->appid = strdup(appid);
-	goto_if(NULL == item_info->appid, ERROR);
-
-	if (name) {
-			item_info->name = strdup(name);
-			goto_if(NULL == item_info->name, ERROR);
-	}
-
-	if (type) {
-		item_info->type = strdup(type);
-		goto_if(NULL == item_info->type, ERROR);
-		if (!strncmp(item_info->type, APP_TYPE_WGT, strlen(APP_TYPE_WGT))) {
-			item_info->open_app = 1;
-		} else {
-			item_info->open_app = 0;
-		}
-	}
-
-
-		if (icon) {
-			if (strlen(icon) > 0) {
-				item_info->icon = strdup(icon);
-				goto_if(NULL == item_info->icon, ERROR);
-			} else {
-				item_info->icon = strdup(DEFAULT_ICON);
-				goto_if(NULL == item_info->icon, ERROR);
-			}
-		} else {
-			item_info->icon = strdup(DEFAULT_ICON);
-			goto_if(NULL == item_info->icon, ERROR);
-		}
-		_D("name:%s,type:%s,icon:%s",item_info->name,item_info->type,item_info->icon);
-	item_info->removable = removable;
-
-	package_info_destroy(appinfo_h);
-
-
-	return item_info;
-
-ERROR:
-	apps_item_info_destroy(item_info);
-	package_info_destroy(appinfo_h);
-
-	return NULL;
-}
-#else
 
 item_info_s *apps_item_info_create(const char *appid)
 {
@@ -1305,7 +1052,7 @@ item_info_s *apps_item_info_create(const char *appid)
 	bool nodisplay = false;
 	bool enabled = false;
 	bool removable = false;
-	int support_mode = 0;
+	//int support_mode = 0;
 
 	retv_if(!appid, NULL);
 
@@ -1331,7 +1078,7 @@ item_info_s *apps_item_info_create(const char *appid)
 		break_if(NULL == pkghandle);
 	} while (0);
 
-	if(appid != APPS_PKG){
+	if(strncmp(appid, APPS_PKG, strlen(APPS_PKG))){
 		goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_nodisplay(appinfo_h, &nodisplay), ERROR);
 		if (nodisplay) goto ERROR;
 
@@ -1401,8 +1148,6 @@ ERROR:
 	return NULL;
 }
 
-#endif
-
 static int _apps_sort_cb(const void *d1, const void *d2)
 {
 	_ENTER;
@@ -1419,68 +1164,6 @@ static int _apps_sort_cb(const void *d1, const void *d2)
 #define VCONFKEY_WMS_HOST_STATUS_VENDOR "db/wms/host_status/vendor"
 #endif
 
-#ifdef TIZEN_SDK
-bool
-package_info_cb(package_info_h handle, void *user_data)
-{
-
-	_ENTER;
-	Eina_List **list = user_data;
-	char *appid = NULL;
-	item_info_s *item_info = NULL;
-
-	if(NULL == handle) return false;
-	if(NULL == user_data) return false;
-
-	package_info_get_package(handle, &appid);
-	if(NULL == appid) return true;
-	_D("appid:%s",appid);
-	item_info = apps_item_info_create(appid);
-
-	if (NULL == item_info) {
-		_E("%s does not have the item_info", appid);
-		return false;
-	}
-
-	*list = eina_list_append(*list, item_info);
-	return true;
-
-}
-
-
-static Eina_List *_read_all_apps(Eina_List **list)
-{
-	_ENTER;
-	package_manager_filter_h handle = NULL;
-	int ret = package_manager_filter_create(&handle);
-	if(ret !=PACKAGE_MANAGER_ERROR_NONE )
-		{
-			_E("Error in createing package manager filter ret :%d",ret);
-		}
-	ret = package_manager_filter_add_bool(handle,"PMINFO_PKGINFO_PROP_PACKAGE_NODISPLAY_SETTING",0);
-	if(ret != PACKAGE_MANAGER_ERROR_NONE )
-	{
-		_E("Error in adding filter ret:%d",ret);
-		goto ERROR;
-	}
-
-	ret = package_manager_filter_foreach_package_info(handle,package_info_cb,list);
-	if(ret != PACKAGE_MANAGER_ERROR_NONE)
-	{
-		_E("Error in package_manager_filter_foreach_package_info ret:%d",ret);
-		goto ERROR;
-	}
-
-	*list = eina_list_sort(*list, eina_list_count(*list), _apps_sort_cb);
-
-ERROR:
-	if(handle)
-		package_manager_filter_destroy(handle);
-
-	return *list;
-
-}
-#else
 static int _apps_all_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 {
 	_ENTER;
@@ -1521,7 +1204,7 @@ ERROR:
 
 	return *list;
 }
-#endif
+
 static Eina_Bool _load_list(void* data){
 	Eina_List *pkgmgr_list = NULL;
 	g_info->app_list = _read_all_apps(&pkgmgr_list);
@@ -1529,13 +1212,6 @@ static Eina_Bool _load_list(void* data){
 	return ECORE_CALLBACK_CANCEL;
 }
 
-/*
-void create_add_to_shortcut(const char *widget_name, const char *index){
-	_D("check");
-	_create_layout(NULL);
-
-}
-*/
 
 static void
 app_pause(void *data)
@@ -1568,34 +1244,19 @@ static void app_control(app_control_h service, void *data)
 
 	char *tmp = NULL;
 	char *first = NULL;
-	char* save;
+	char* save = NULL;
 	int i = 0;
 	int reset = 0;
 	int ret = 0;
 
 
 
-	//todo: this is requried: check how we are passing data to app control
-#if 0
-	char *instance_id = NULL;
-	app_control_get_extra_data(service, "content", &content);
-	app_control_get_extra_data(service, "instance_id", &instance_id);
-	_D("content value : %s", content);
-	_D("instance_id value : %s", instance_id);
-	widget_id = strdup(instance_id);
-	free(instance_id);
-#else
-	//content = strdup(DEFAULT_APP_ORDER);
-	//todo: content
-	//read from preference key, if not exist then load default app order string else, load the existing app order string
 	char *instance_id = NULL;
 	ret = app_control_get_extra_data(service, "instance_id", &instance_id);
 	if(!ret)
 	{
 		_E("widget id is null check");
 	}
-	//todo: change this when whome is able to fetch widget instance id.
-	//widget_id = strdup(instance_id);
 	widget_id = strdup(APP_WIDGET_CONTENT_KEY);
 	bool prefkey_exist = false;
 	ret = preference_is_existing(widget_id, &prefkey_exist);
@@ -1629,7 +1290,7 @@ static void app_control(app_control_h service, void *data)
 		}
 	}
 	_D("content: %s",content);
-#endif
+
 
 	if(!content){
 		_E("there is no content info.");
@@ -1679,8 +1340,6 @@ static void app_control(app_control_h service, void *data)
 		bundle_add_str(b, "test", tmp);
 		_D("content : %s", tmp);
 
-//		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
-		//ret = widget_service_trigger_update(APP_WIDGET_PKGID, NULL, b, 1);
 		if(WIDGET_ERROR_NONE != ret){
 			_E("app-widget trigger failed %x", ret);
 		}
