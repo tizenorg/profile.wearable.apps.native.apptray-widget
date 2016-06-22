@@ -137,7 +137,7 @@ static inline struct info *find_item(char* id)
 
 	EINA_LIST_FOREACH(s_list, l, item) {
 			_D("item->id:%s,id:%s",item->id,id);
-			if (!strncmp(item->id, id,sizeof(id))) {
+			if (!strncmp(item->id, id, strlen(id))) {
 					return item;
 			}
 	}
@@ -146,6 +146,7 @@ static inline struct info *find_item(char* id)
 	return item;
 }
 
+PUBLIC int widget_update_content(const char* id);
 
 
 void preference_changed_cb_impl(const char *key, void *user_data)
@@ -162,7 +163,7 @@ void preference_changed_cb_impl(const char *key, void *user_data)
 		_E("id is null");
 		return;
 	}
-	item = find_item(id);
+	item = find_item((char*)id);
 //	widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
@@ -175,7 +176,7 @@ void preference_changed_cb_impl(const char *key, void *user_data)
 
     _D("after content: %s",item->content);
 
-	widget_update_content(id);
+	widget_update_content((const char *)id);
 
 	_EXIT;
 }
@@ -273,7 +274,7 @@ static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *co
 	struct info *item;
 	_D("[%s:%d]\n", __func__, __LINE__);
 
-	item = find_item(id);
+	item = find_item((char *)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 			/*!
@@ -318,7 +319,7 @@ PUBLIC int widget_need_to_update(const char* id)
 
 	_D("[%s]\n", id);
 
-	item = find_item(id);
+	item = find_item((char *)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		/* Hmm, there is no matched instance. */
@@ -917,12 +918,12 @@ PUBLIC int widget_update_content(const char* id)
 {
 	_ENTER;
 	struct info *item;
-	item = find_item(id);
+	item = find_item((char*)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	int i = 0;
 	char *tmp = NULL;
 	char *first = NULL;
-	char* save;
+	char* save = NULL;
 	int ret = 0;
 	if (!item) {
 		 _E("id is invalid");
@@ -959,10 +960,10 @@ PUBLIC int widget_update_content(const char* id)
 	return WIDGET_ERROR_DISABLED;
 }
 
-static char *_set_content_data(char *content, char *updated_data){
+/*static char *_set_content_data(char *content, char *updated_data){
 	_ENTER;
 	return NULL;
-}
+}*/
 
 
 PUBLIC int widget_set_content_info(const char* id, bundle *b)
@@ -975,7 +976,7 @@ PUBLIC int widget_set_content_info(const char* id, bundle *b)
 
 	_E("[%s]\n", id);
 
-	item = find_item(id);
+	item = find_item((char*)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
@@ -1028,7 +1029,7 @@ PUBLIC int widget_clicked(const char* id, const char *event, double timestamp, d
 	_D("ID:%s",id);
 	_D("dbox clicked");
 	struct info *item;
-	item = find_item(id);
+	item = find_item((char*)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
@@ -1149,7 +1150,7 @@ static Evas_Object *_create_win(char* id, int w, int h)
 		return NULL;
 	}
 
-	ret = widget_app_get_elm_win(id, &win);
+	ret = widget_app_get_elm_win((widget_context_h)id, &win);
 	if (ret != WIDGET_ERROR_NONE) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "failed to get window. err = %d", ret);
 		return NULL;
@@ -1173,6 +1174,10 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	//preference_remove_all();
 	item = find_item((char*)id);
 	//widget_app_context_get_tag(id,(void**)&item);
+	if (!item) {
+		 _E("id is invalid");
+			return WIDGET_ERROR_NOT_EXIST;
+	}
 
 	if( item->first_loaded && w == item->w && h == item->h)
 	{
@@ -1180,10 +1185,7 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 		return WIDGET_ERROR_NONE;
 	}
 	item->first_loaded = 1;
-	if (!item) {
-		 _E("id is invalid");
-			return WIDGET_ERROR_NOT_EXIST;
-	}
+	
 
 	_D("WIDGET is resized\n");
 	item->dbox_win = _create_win(id,w,h);
@@ -1289,7 +1291,7 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 //todo: by any chance content string is lost, we should load default apps. this has to be handle
 	tmp = strdup(item->content);
 	char *first = NULL;
-	char* save;
+	char* save = NULL;
 	int i = 0;
 
 	for(i = 0 ; i < 4 ; i++){
@@ -1394,7 +1396,7 @@ PUBLIC int widget_change_group(const char* id, const char *cluster, const char *
 	_ENTER;
 	struct info *item;
 
-	item = find_item(id);
+	item = find_item((char*)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
@@ -1441,7 +1443,7 @@ PUBLIC char *widget_pinup(const char* id, int pinup)
 	_ENTER;
 	struct info *item;
 
-	item = find_item(id);
+	item = find_item((char*)id);
 //	widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 		 _E("id is invalid");
@@ -1457,7 +1459,7 @@ PUBLIC int widget_is_pinned_up(const char* id)
 	_D("ID:%s",id);
 	struct info *item;
 
-	item = find_item(id);
+	item = find_item((char*)id);
 	//widget_app_context_get_tag(id, (void**) &item);
 	if (!item) {
 			return WIDGET_ERROR_NOT_EXIST;
@@ -1551,12 +1553,12 @@ widget_app_create(void *user_data)
 		APP_EVENT_REGION_FORMAT_CHANGED, widget_app_region_changed, user_data);
 
 	widget_instance_lifecycle_callback_s ops = {
-		.create = widget_create,
-		.destroy = widget_destroy,
-		.pause = widget_pause,
-		.resume = widget_resume,
-		.update = widget_update,
-		.resize = widget_resize,
+		.create = (void *)widget_create,
+		.destroy = (void *)widget_destroy,
+		.pause = (void *)widget_pause,
+		.resume = (void *)widget_resume,
+		.update = (void *)widget_update,
+		.resize = (void *)widget_resize,
 	};
 
 	return widget_app_class_create(ops, user_data);

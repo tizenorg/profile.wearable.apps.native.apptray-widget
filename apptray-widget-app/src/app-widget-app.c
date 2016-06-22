@@ -810,9 +810,9 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 		evas_object_resize(slot, 100, 100);
 
 		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_DOWN, _down_cb, slot);
-		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, pos);
+		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_MOVE, _move_cb, &pos);
 		evas_object_event_callback_add(slot, EVAS_CALLBACK_MOUSE_UP, _up_cb, slot);
-		elm_object_signal_callback_add(slot, "mouse_clicked", "*", _plus_mouse_clicked_cb, pos);
+		elm_object_signal_callback_add(slot, "mouse_clicked", "*", _plus_mouse_clicked_cb, &pos);
 
 		elm_object_part_content_set(g_info->edit_layout, index, slot);
 		evas_object_show(slot);
@@ -913,7 +913,7 @@ static void _create_layout(appdata_s *info){
 	int ret = 0;
 	Eina_List *item_info_list = NULL;
 	item_info_s *item_info = NULL;
-	Evas_Object *page = NULL;
+	//Evas_Object *page;
 
 	layout = elm_layout_add(info->select_win);
 	char full_path[PATH_MAX] = { 0, };
@@ -983,7 +983,7 @@ static void _create_layout(appdata_s *info){
 	}
 	eina_list_free(item_info_list);
 
-	page = home_custom_scroller_get_current_page(scroller);
+	//page = home_custom_scroller_get_current_page(scroller);
 	//elm_object_signal_emit(page, "focus_out_effect", "item");
 
 	Evas_Object *index = home_custom_scroller_index_add(layout, scroller);
@@ -1018,7 +1018,7 @@ item_info_s *apps_apps_info_create(const char *appid)
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	pkgmgrinfo_pkginfo_h pkghandle = NULL;
 	char *pkgid = NULL;
-	int support_mode = 0;
+	//int support_mode = 0;
 	#endif
 
 	char *icon = NULL;
@@ -1119,7 +1119,7 @@ item_info_s *apps_recent_info_create(const char *appid)
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	pkgmgrinfo_pkginfo_h pkghandle = NULL;
 	char *pkgid = NULL;
-	int support_mode = 0;
+	//int support_mode = 0;
 	#endif
 
 	char *icon = NULL;
@@ -1305,7 +1305,7 @@ item_info_s *apps_item_info_create(const char *appid)
 	bool nodisplay = false;
 	bool enabled = false;
 	bool removable = false;
-	int support_mode = 0;
+	//int support_mode = 0;
 
 	retv_if(!appid, NULL);
 
@@ -1331,7 +1331,7 @@ item_info_s *apps_item_info_create(const char *appid)
 		break_if(NULL == pkghandle);
 	} while (0);
 
-	if(appid != APPS_PKG){
+	if(strncmp(appid, APPS_PKG, strlen(APPS_PKG))){
 		goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_nodisplay(appinfo_h, &nodisplay), ERROR);
 		if (nodisplay) goto ERROR;
 
@@ -1568,7 +1568,7 @@ static void app_control(app_control_h service, void *data)
 
 	char *tmp = NULL;
 	char *first = NULL;
-	char* save;
+	char* save = NULL;
 	int i = 0;
 	int reset = 0;
 	int ret = 0;
