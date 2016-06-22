@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <manifest xmlns="http://tizen.org/ns/packages" api-version="3.0" package="org.tizen.apptray-widget" version="1.0.0">
     <profile name="wearable"/>
-	<widget-application appid="org.tizen.apptray-widget" exec="apptray-widget" main="true" update-period="0">
+	<widget-application appid="org.tizen.apptray-widget" count="1" exec="apptray-widget" main="true" update-period="0">
 		<label>apps shortcut</label>
 		<icon>org.tizen.apptray-widget.png</icon>
 		<support-size preview="/usr/apps/org.tizen.apptray-widget/shared/res/apps_widget_preview.png">2x2</support-size>

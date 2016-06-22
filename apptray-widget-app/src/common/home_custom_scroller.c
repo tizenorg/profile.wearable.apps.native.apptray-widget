@@ -17,11 +17,7 @@
 
 #include <Elementary.h>
 #include <app_control.h>
-//#include <vconf.h>
 #include <efl_extension.h>
-//#include <uxt_scroller.h>
-
-
 #include "common/home_custom_scroller.h"
 #include "common/home_custom_scroller_info.h"
 #include "common/home_custom_index.h"
@@ -115,9 +111,6 @@ static void _default_anim_stop_cb(void *data, Evas_Object *scroller, void *event
 
 	Evas_Object *page = home_custom_scroller_get_current_page(scroller);
 	ret_if(!page);
-
-//	elm_object_signal_emit(page, "focus_out_effect", "item");
-
 	Evas_Object *index = evas_object_data_get(scroller, PRIVATE_DATA_KEY_INDEX);
 	if(index) home_custom_index_bring_in_page(index, page);
 }
@@ -138,12 +131,8 @@ static void _default_drag_start_cb(void *data, Evas_Object *scroller, void *even
 	if(_drag_start_cb) _drag_start_cb(data, scroller, event_info);
 
 	/* _drag_start_cb is called even if the scroller is not moved. */
-	//evas_object_data_set(scroller, PRIVATE_DATA_KEY_IS_SCROLLING, (void *) 1);
-
 	Evas_Object *page = home_custom_scroller_get_current_page(scroller);
 	ret_if(!page);
-
-//	elm_object_signal_emit(page, "focus_in_effect", "item");
 	scroll_transit_go = EINA_TRUE;
 }
 
@@ -188,7 +177,6 @@ static void _init_rotary(Evas_Object *scroller)
 {
 	_ENTER;
 	_D("Initialize the rotary event");
-//	eext_rotary_event_callback_set(scroller, _rotary_cb, NULL);
 }
 
 
@@ -197,7 +185,6 @@ static void _destroy_rotary(Evas_Object *scroller)
 {
 	_ENTER;
 	_D("Finish the rotary event");
-//	eext_rotary_event_callback_set(scroller, NULL, NULL);
 }
 
 scroller_info_s *home_custom_scroller_info_create(void)
@@ -245,13 +232,9 @@ void home_custom_scroller_deregister_cb(Evas_Object *scroller)
 Evas_Object *home_custom_scroller_add(Evas_Object *parent, scroller_info_s *scroller_info)
 {
 	_ENTER;
-//	Evas_Object *win = NULL;
 	Evas_Object *scroller = NULL;
 	Evas_Object *box_layout = NULL;
 	Evas_Object *box = NULL;
-
-//	int height;
-
 	scroller = elm_scroller_add(parent);
 	retv_if(!scroller, NULL);
 	_D("scroller is added");
@@ -262,15 +245,6 @@ Evas_Object *home_custom_scroller_add(Evas_Object *parent, scroller_info_s *scro
 	elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_OFF);
 	elm_scroller_page_scroll_limit_set(scroller, 1, 0);
 	elm_object_scroll_lock_y_set(scroller, EINA_TRUE);
-//	elm_scroller_bounce_set(scroller, EINA_FALSE, EINA_FALSE);
-//	uxt_scroller_set_page_flick_enabled(scroller, EINA_TRUE);
-
-#if 0 /* Scroll to move pages at a time */
-	elm_scroller_page_size_set(scroller, instance_info->root_w, ITEM_HEIGHT * apps_main_get_info()->scale);
-	elm_scroller_page_scroll_limit_set(scroller, 0, 3);
-#endif
-//	elm_scroller_content_min_limit(scroller, EINA_FALSE, EINA_TRUE);
-//	elm_scroller_single_direction_set(scroller, ELM_SCROLLER_SINGLE_DIRECTION_HARD);
 
 	Evas_Object *circle_scroller = eext_circle_object_scroller_add(scroller, NULL);
 	eext_circle_object_scroller_policy_set(circle_scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_OFF);
@@ -325,9 +299,6 @@ Evas_Object *home_custom_scroller_add(Evas_Object *parent, scroller_info_s *scro
 	scroller_info->box = box;
 
 	evas_object_data_set(scroller, PRIVATE_DATA_KEY_SCROLLER_INFO, scroller_info);
-
-//	uxt_scroller_set_rotary_event_enabled(scroller, EINA_TRUE);
-
 	_init_rotary(scroller);
 	_D("scroller created success");
 	return scroller;

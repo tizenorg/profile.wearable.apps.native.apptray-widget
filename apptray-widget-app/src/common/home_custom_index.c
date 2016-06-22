@@ -249,12 +249,9 @@ static void _update_index(Evas_Object *scroller, Evas_Object *index, const Eina_
 			if (!cur_inserted) {
 				cur_start_idx = index_number;
 			}
-
 			cur_inserted++;
 			idx_it = elm_index_item_append(index, NULL, NULL, (void *) index_number);
-#ifdef RUN_ON_DEVICE
 			elm_object_item_style_set(idx_it, _index_style_get(style_base + index_number, style_even));
-#endif
 			index_number++;
 		}
 	}
