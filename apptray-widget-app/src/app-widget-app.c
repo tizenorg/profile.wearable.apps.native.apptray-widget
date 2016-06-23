@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+
+ 
 #include "app-widget-app.h"
 
 #undef TIZEN_SDK
@@ -42,6 +45,9 @@
 #define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
 #define APPS_PKG "org.tizen.apptray-widget-app"
 #define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
+
+#define APPTRAY_INSTANCE_ID_KEY "apptray_instance_id"
+#define APPTRAY_CONTENT_KEY "apptray_content_id"
 
 typedef struct appdata {
 	Evas_Object *edit_win;
@@ -104,12 +110,14 @@ void updateContent()
 	int ret = preference_set_string(widget_id, content);
 	_D("content: %s updated to preference file: ret:%d",content,ret);
 
+
 	}
 	else
 	{
 		_E("g_info is NULL");
 	}
 }
+
 
 char *_get_date(void)
 {
@@ -1248,57 +1256,55 @@ static void app_control(app_control_h service, void *data)
 	int i = 0;
 	int reset = 0;
 	int ret = 0;
+	char *content_info_string = NULL;
+	bundle *content_info_bundle = NULL;
+
+
 
 
 
 	char *instance_id = NULL;
-	ret = app_control_get_extra_data(service, "instance_id", &instance_id);
-	if(!ret)
+	ret = app_control_get_extra_data(service, "content_info", &content_info_string);
+	_D("appcontrol extra data fetch: ret:%d",ret);
+	if(content_info_string == NULL)
 	{
-		_E("widget id is null check");
+		_E("content_info_string  is null check check in w-home _edit_button_click_cb ");
+		return;
 	}
-	widget_id = strdup(APP_WIDGET_CONTENT_KEY);
-	bool prefkey_exist = false;
-	ret = preference_is_existing(widget_id, &prefkey_exist);
-	if(ret !=PREFERENCE_ERROR_NONE)
+	_D("content info string:%s",content_info_string);
+	content_info_bundle = bundle_decode(content_info_string, strlen(content_info_string));
+	if(content_info_bundle == NULL)
 	{
-		_E("preference_is_existing api failed ret:%d ",ret);
-		content = strdup(DEFAULT_APP_ORDER);
+		_D("content_info_bundle is null, please check");
+		free(content_info_string);
+		return;
+	}
+		
+	ret = bundle_get_str (content_info_bundle, APPTRAY_INSTANCE_ID_KEY, &instance_id); 
+	_D("bundle_get_str for APPTRAY_INSTANCE_ID_KEY  ret:%d",ret);
+	if(ret == BUNDLE_ERROR_NONE && instance_id!=NULL)
+	{
+		_D("instance_id : %s",instance_id);
+		widget_id = strdup(instance_id);
 	}
 	else
 	{
-		_D("preference_is_existing api success");
-		if(prefkey_exist)
-		{
-			_D("preference key is already exist");
-			ret = preference_get_string(widget_id, &content);
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_get_string api failed, so load default app order ret:%d",ret);
-				content = strdup(DEFAULT_APP_ORDER);
-			}
-		}
-		else
-		{
-			_E("preference_key is not exist. check why key is not present. key should present always");
-			ret = preference_set_string(widget_id, DEFAULT_APP_ORDER);
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_set_string api failed ret:%d",ret);
-			}
-			content = strdup(DEFAULT_APP_ORDER);
-		}
+		_E("error in getting APPTRAY_INSTANCE_ID_KEY value");
+		bundle_free(content_info_bundle);
+		return;
 	}
-	_D("content: %s",content);
-
-
-	if(!content){
+	ret = bundle_get_str (content_info_bundle, APPTRAY_CONTENT_KEY, &content); 
+	_D("bundle_get_str for APPTRAY_CONTENT_KEY  ret:%d",ret);
+	
+	if(content!=NULL && ret == BUNDLE_ERROR_NONE){
+		tmp = strdup(content);
+		_D("content fetched from content-info:%s",content);
+		
+	}
+	else{
 		_E("there is no content info.");
 		tmp = strdup("empty empty empty empty");
 		content = strdup("empty empty empty empty");
-	}
-	else{
-		tmp = strdup(content);
 	}
 
 	for(i = 0 ; i < 4 ; i++){
@@ -1334,6 +1340,8 @@ static void app_control(app_control_h service, void *data)
 			_E("failed to create bundle");
 			free(content);
 			free(tmp);
+			free(content_info_string);
+			bundle_free(content_info_bundle);
 			return;
 		}
 
@@ -1361,6 +1369,8 @@ static void app_control(app_control_h service, void *data)
 
 	free(content);
 	free(tmp);
+	free(content_info_string);
+	bundle_free(content_info_bundle);
 	ecore_idler_add(_load_list, NULL);
 }
 

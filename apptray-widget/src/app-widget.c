@@ -37,7 +37,9 @@
 #include <unicode/ustring.h>
 
 #include "app-widget.h"
+
 #include <app_preference.h>
+
 
 #define PATH_MAX        4096	/* # chars in a path name including nul */
 
@@ -65,6 +67,9 @@
 #define MAX_BADGE_COUNT 999
 #define SHORTCUT_W 123
 #define SHORTCUT_H 123 
+#define APPTRAY_INSTANCE_ID_KEY "apptray_instance_id"
+#define APPTRAY_CONTENT_KEY "apptray_content_id"
+
 
 
 static Eina_List *s_list;
@@ -83,6 +88,7 @@ struct info {
 	struct object_info *obj[5];
 	int need_to_delete;
 	int first_loaded;
+	bundle* content_info;
 };
 
 struct object_info {
@@ -104,6 +110,103 @@ struct object_info {
 
 void item_badge_unregister_changed_cb(void);
 static void _set_app_slot(struct info *item, const char *appid, int pos);
+PUBLIC int widget_update_content(struct info* item);
+
+
+void preference_changed_cb_impl(const char *key, void *user_data)
+{
+	_ENTER;
+	struct info* item = (struct info*)user_data;
+	if(!item)
+	{
+		_E("user data is null");
+		return;
+	}
+	_D("id:%s,  key:%s",item->id,key);
+
+	
+	_D("before content: %s",item->content);
+   	 preference_get_string(key, &item->content);
+
+   	 _D("after content: %s",item->content);
+
+	widget_update_content(item);
+
+	_EXIT;
+}
+
+
+bundle* create_bundle(struct info *item)
+{
+	_ENTER;
+	int ret =0;
+	if(!item)
+	{
+		_D("item is null");
+		return NULL;
+	}
+	bundle* b = NULL;
+	b = bundle_create();
+	if(b)
+	{
+		bundle_add_str(b,APPTRAY_INSTANCE_ID_KEY,item->id);
+		_D("bundle_add_str for  APPTRAY_INSTANCE_ID_KEY key:%s, ret:%d",item->id,ret);
+		bundle_add_str(b,APPTRAY_CONTENT_KEY,item->content);
+		_D("bundle_add_str for  APPTRAY_CONTENT_KEY content :%s ret:%d",item->content,ret);
+	}
+	return b;
+}
+
+void update_bundle(struct info *item)
+{
+	_ENTER;
+	int ret = 0;
+	if(!item)
+	{
+		_D("arguments are null. check it");
+		return;
+	}
+	if(item->content_info)
+	{
+		bundle_free(item->content_info);
+	}
+	item->content_info = create_bundle(item);
+
+	//inform w-home regarding content info change.
+	ret = widget_app_context_set_content_info ((widget_context_h)item->id, item->content_info );
+	_D("widget_app_context_set_content_info ret:%d",ret);
+	//store the preference key for instance id.
+	
+	bool prefkey_exist = false;
+	//read from preference key, if not exist then load default app order string else, load the existing app order string
+	ret = preference_is_existing(item->id, &prefkey_exist);
+
+	if(ret !=PREFERENCE_ERROR_NONE)
+	{
+		_E("preference_is_existing api failed ret:%d ",ret);
+		ret = preference_set_string(item->id, item->content);
+		if(ret != PREFERENCE_ERROR_NONE)
+		{
+			_E("preference_set_string api failed ret:%d",ret);
+		}
+	}
+	else
+	{
+		_D("preference_is_existing api success");
+
+		ret = preference_set_string(item->id,  item->content);
+
+		if(ret != PREFERENCE_ERROR_NONE)
+		{
+			_E("preference_set_string api failed ret:%d",ret);
+		}
+	}
+	_D("item->content :%s",item->content);
+	preference_unset_changed_cb(item->id);
+	preference_set_changed_cb(item->id,preference_changed_cb_impl,item);
+
+}
+
 
 
 static void _get_resource(const char *file_in, char *file_path_out, int file_path_max)
@@ -133,35 +236,7 @@ static inline struct info *find_item(char* id)
 	return item;
 }
 
-PUBLIC int widget_update_content(const char* id);
 
-
-void preference_changed_cb_impl(const char *key, void *user_data)
-{
-	_ENTER;
-	char *id= *((char**)user_data);
-	_D("id:%s,  key:%s",id,key);
-	struct info *item;
-	if(!id)
-	{
-		_E("id is null");
-		return;
-	}
-	item = find_item((char*)id);
-	if (!item) {
-		 _E("id is invalid");
-		_E("item is not found");
-		return;
-	}
-	_D("before content: %s",item->content);
-    preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
-
-    _D("after content: %s",item->content);
-
-	widget_update_content((const char *)id);
-
-	_EXIT;
-}
 
 
 bool _is_arabic(const char *lang){
@@ -279,7 +354,10 @@ static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *co
 	free(item->content);
 	free(item->id);
 	free(item);
-	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
+	preference_remove_all ();
+	preference_remove(id);
+	preference_unset_changed_cb(id);
+
 	return WIDGET_ERROR_NONE;
 }
 
@@ -729,11 +807,9 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 }
 
-PUBLIC int widget_update_content(const char* id)
+PUBLIC int widget_update_content(struct info* item)
 {
 	_ENTER;
-	struct info *item;
-	item = find_item((char*)id);
 	int i = 0;
 	char *tmp = NULL;
 	char *first = NULL;
@@ -1035,49 +1111,18 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	item->obj[3] = _add_empty_slot(layout, 4, item);
 	_D("four slots added");
 
-	bool prefkey_exist = false;
-	//read from preference key, if not exist then load default app order string else, load the existing app order string
-	ret = preference_is_existing(APP_WIDGET_CONTENT_KEY, &prefkey_exist);
-
-	if(ret !=PREFERENCE_ERROR_NONE)
+	//Todo: check if content is exist or not. if not load default app order
+	if(item->content)
 	{
-		_E("preference_is_existing api failed ret:%d ",ret);
-		item->content = strdup(DEFAULT_APP_ORDER);
-		ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
-		if(ret != PREFERENCE_ERROR_NONE)
-		{
-			_E("preference_set_string api failed ret:%d",ret);
-		}
+		_D("item content is already exist: %s", item->content);
 	}
 	else
 	{
-		_D("preference_is_existing api success");
-		if(prefkey_exist)
-		{
-			_D("preference key is already exist");
-			ret = preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
-
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_get_string api failed, so load default app order ret:%d",ret);
-				item->content = strdup(DEFAULT_APP_ORDER);
-			}
-		}
-		else
-		{
-			_E("preference_key is not exist. might be first boot so load default app order and store in preference key");
-			ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
-
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_set_string api failed ret:%d",ret);
-			}
-			item->content = strdup(DEFAULT_APP_ORDER);
-		}
+		item->content = strdup(DEFAULT_APP_ORDER);
+		_D("item content is null so loading default app order %s",item->content);
+		
 	}
-	_D("item->content :%s",item->content);
-	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
-	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&item->id);
+	update_bundle(item);
 	tmp = strdup(item->content);
 	char *first = NULL;
 	char* save = NULL;
@@ -1092,7 +1137,8 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 			_set_app_slot(item, strtok_r(NULL, " ",&save), i);
 		}
 	}
-
+	//is free required for tmp?
+	free(tmp);
 	_D("widget resized to %dx%d\n", w, h);
 	item->w =w;
 	item->h = h;
@@ -1105,6 +1151,8 @@ static int widget_create(char* id, bundle *content, int w, int h, void *user_dat
 	_ENTER;
 	_D("WIDGET is created with id:%s\n",id);
 	struct info *info;
+	char* tmp = NULL;
+	int ret = 0;
 
 	info = malloc(sizeof(*info));
 	if (!info) {
@@ -1117,7 +1165,30 @@ static int widget_create(char* id, bundle *content, int w, int h, void *user_dat
 			free(info);
 			return WIDGET_ERROR_OUT_OF_MEMORY;
 	}
+	info->content = NULL;
+	info->content_info= NULL;
+	//todo: if content bundle is not null then this is not a new intance, w-home is restarted so get the content from the bundle.
+	//bundle_add_str (bundle *b, const char *key, const char *str)
+	//bundle_get_str (bundle *b, const char *key, char **str)
+	//APPTRAY_INSTANCE_ID_KEY, APPTRAY_CONTENT_KEY
+	//need to check when preference_remove_all() should be called when w-home restarted all previous keys should be removed for first instance only.
+	if(content)
+	{
+		
+		ret = bundle_get_str(content, APPTRAY_CONTENT_KEY,&tmp);
+		_D("bundle_get_str for APPTRAY_CONTENT_KEY ret:%d",ret);
+		if(ret == BUNDLE_ERROR_NONE && tmp)
+		{
+			info->content = strdup(tmp);
+			_D(" loaded content from bundle, w-home is restarted : %s", info->content);
+		}
+		else
+		{
+			_D("bundle_get_str() failed, check with w-home team  ret: %d",ret);
+		}
+	}
 
+	
 	/**
 	 * @NOTE
 	 * cluster == 'user,created'
