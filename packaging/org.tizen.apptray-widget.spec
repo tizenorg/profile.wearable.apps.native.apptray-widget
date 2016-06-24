@@ -4,7 +4,7 @@ Version:	0.1.1
 Release:	1
 Summary: Tizen W apptray widget application
 Source: %{name}-%{version}.tar.gz
-License: Flora
+License: Flora-1.1
 Group: Applications/System
 
 BuildRequires: cmake
