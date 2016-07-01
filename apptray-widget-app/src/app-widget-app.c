@@ -38,10 +38,11 @@
 #define SCHEDULE_ICON_ARABIC "res/schedule_arabic_%s.png"
 #define LANGUAGE_ARABIC "ar"
 #define  PACKAGE_MANAGER_PKGINFO_PROP_NODISPALY  "PMINFO_PKGINFO_PROP_PACKAGE_NODISPLAY_SETTING"
-#define APP_WIDGET_PKGID "org.tizen.app-widget"
+#define APP_WIDGET_PKGID "org.tizen.apptray-widget"
 #define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
 #define APPS_PKG "org.tizen.apptray-widget-app"
-#define APP_WIDGET_CONTENT_KEY "org.tizen.apptray-widget"
+#define BUNDLE_CONTENT_KEY "content"
+#define BUNDLE_ID_KEY "id"
 
 typedef struct appdata {
 	Evas_Object *edit_win;
@@ -59,7 +60,7 @@ typedef struct appdata {
 	Eina_List *item_list;
 	char *appid_list[5];
 	char *applabel_list[5];
-}appdata_s;
+} appdata_s;
 
 char *widget_id = NULL;
 int slot_index = 0;
@@ -77,7 +78,8 @@ int empty_count = 0;
 
 static appdata_s *g_info = NULL;
 
-static appdata_s *_get_info(void){
+static appdata_s *_get_info(void) 
+{
 	return g_info;
 }
 
@@ -97,36 +99,29 @@ void updateContent()
 {
 	_ENTER;
 	char content[255] = {0};
-	if(g_info)
-	{
-	snprintf(content, sizeof(content)-1, "%s %s %s %s", g_info->appid_list[0], g_info->appid_list[1], g_info->appid_list[2], g_info->appid_list[3]);
-
-	int ret = preference_set_string(widget_id, content);
-	_D("content: %s updated to preference file: ret:%d",content,ret);
-
-	}
-	else
-	{
+	int ret = 0;
+	if (g_info) {
+		snprintf(content, sizeof(content)-1, "%s %s %s %s", g_info->appid_list[0], g_info->appid_list[1], g_info->appid_list[2], g_info->appid_list[3]);
+		_D("content: %s ", content);
+		bundle *b = bundle_create();
+		ret = bundle_add_str(b, BUNDLE_ID_KEY, widget_id);
+		_D("bundle add str BUNDLE_ID_KEY ret:%d", ret);
+		ret = bundle_add_str(b, BUNDLE_CONTENT_KEY, content);
+		_D("bundle add str BUNDLE_CONTENT_KEY ret:%d", ret);
+		ret = widget_service_trigger_update(APP_WIDGET_PKGID, widget_id, b, 1);
+		_D("widget_service_trigger_update ret:%d", ret);
+		//todo: need to check with widget team why widget service trigger update call fails with -13(permission denies) what previleges to add.
+		// for now communication between widget and app can be done through preference apis
+		if (widget_id) {
+			_D("widget_id:%s", widget_id);
+			ret = preference_set_string(widget_id, content);
+		}	
+		if (ret != PREFERENCE_ERROR_NONE) {
+			_E("preference_set_string api failed ret:%d", ret);
+		}
+	} else	{
 		_E("g_info is NULL");
 	}
-}
-
-char *_get_date(void)
-{
-	_ENTER;
-	struct tm st;
-	time_t tt = time(NULL);
-	localtime_r(&tt, &st);
-
-	char str_date[5] = {0,};
-	char *date = NULL;
-
-	snprintf(str_date, sizeof(str_date), "%d", st.tm_mday);
-
-	date = strdup(str_date);
-
-	return date;
-
 }
 
 static void _init_theme(void)
@@ -155,11 +150,10 @@ static Eina_Bool _key_release_cb(void *data, int type, void *event)
 
 	if (!strcmp(ev->keyname, /*KEY_BACK*/"XF86Back") || !strcmp(ev->keyname, /*KEY_POWER*/"XF86PowerOff")) {
 		_D("back or home key cb");
-		if(evas_object_visible_get(g_info->select_win) == EINA_TRUE){
+		if (evas_object_visible_get(g_info->select_win) == EINA_TRUE) {
 			evas_object_hide(g_info->select_win);
 			evas_object_show(g_info->edit_win);
-		}
-		else{
+		} else {
 			_terminate_add_to_shortcut();
 		}
 	}
@@ -172,33 +166,32 @@ static void _terminate_add_to_shortcut(void){
 	appdata_s *info = _get_info();
 	int i = 0;
 
-	if(empty_count == 4){
+	if (empty_count == 4) {
 		int ret = 0;
 		bundle *b = NULL;
 		b = bundle_create();
-		if(!b){
+		if (!b) {
 			_E("failed to create bundle");
 			return;
 		}
 
 		bundle_add_str(b, "test", "delete");
-		updateContent();
-		if(WIDGET_ERROR_NONE != ret){
+		
+		if (WIDGET_ERROR_NONE != ret) {
 			_E("app-widget widget trigger failed %d", ret);
 		}
-		if(b){
+		if (b) {
 			free(b);
 		}
-	}
-	else{
-		for(i = 0; i < 4 ; i++){
+	} else {
+		for (i = 0; i < 4 ; i++) {
 			_D("%s", g_info->appid_list[i]);
 		}
 
 		int ret = 0;
 		bundle *b = NULL;
 		b = bundle_create();
-		if(!b){
+		if (!b) {
 			_E("failed to create bundle");
 			return;
 		}
@@ -207,14 +200,15 @@ static void _terminate_add_to_shortcut(void){
 		bundle_add_str(b, "test", content);
 		_D("content : %s", content);
 
-		updateContent();
-		if(WIDGET_ERROR_NONE != ret){
+		
+		if (WIDGET_ERROR_NONE != ret) {
 			_E("app widget widget trigger failed %d", ret);
 		}
-		if(b){
+		if (b) {
 			free(b);
 		}
 	}
+	updateContent();
 	evas_object_del(info->edit_win);
 	info->edit_win = NULL;
 
@@ -260,7 +254,8 @@ static void _create_select_win(appdata_s *info, const char *name, const char *ti
 	return;
 }
 
-static Eina_Bool _longpress_timer_cb(void *data){
+static Eina_Bool _longpress_timer_cb(void *data)
+{
 	_ENTER;
 	Evas_Object *item = NULL;
 	char index[10] = {0};
@@ -274,7 +269,8 @@ static Eina_Bool _longpress_timer_cb(void *data){
 	return ECORE_CALLBACK_CANCEL;
 }
 
-static void _render_post_cb(void *data, Evas *e , void *event_info){
+static void _render_post_cb(void *data, Evas *e , void *event_info)
+{
 	_ENTER;
 	_D("render finished");
 	Evas_Object *slot = (Evas_Object *)data;
@@ -283,14 +279,15 @@ static void _render_post_cb(void *data, Evas *e , void *event_info){
 	elm_object_signal_emit(slot, "show_vi", "slot");
 }
 
-static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_ENTER;
 
 	_D("icon clicked");
 
 	item_info_s *item_info = evas_object_data_get((Evas_Object *)data, "p_i_n");
 
-	if(!item_info)
+	if (!item_info)
 		return;
 
 	g_info->appid_list[slot_index] = strdup(item_info->appid);
@@ -301,27 +298,30 @@ static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, 
 	evas_object_hide(g_info->select_win);
 	evas_object_show(g_info->edit_win);
 	evas_event_callback_add(evas_object_evas_get(g_info->edit_layout), EVAS_CALLBACK_RENDER_POST, _render_post_cb, (void *)slot);
-	updateContent();
+	//updateContent();
 }
 
-static void _mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_D("icon mouse down");
 	_ENTER;
 	Evas_Object *icon = elm_object_part_content_get((Evas_Object *)data, "icon");
 	evas_object_color_set(icon, 255, 255, 255, 127);
 }
 
-static void _mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_D("icon mouse up");
 	_ENTER;
 	Evas_Object *icon = elm_object_part_content_get((Evas_Object *)data, "icon");
 	evas_object_color_set(icon, 255, 255, 255, 255);
 }
 
-static void _plus_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _plus_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_D("plus clicked");
 	_ENTER;
-	if(launch_flag == EINA_FALSE){
+	if (launch_flag == EINA_FALSE) {
 		launch_flag = EINA_TRUE;
 		return;
 	}
@@ -330,44 +330,47 @@ static void _plus_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 	evas_object_show(g_info->select_win);
 }
 
-static void _del_mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _del_mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_ENTER;
 	_D("del mouse down");
 	elm_object_signal_emit((Evas_Object *)data, "pressed", "slot");
 }
 
-static void _del_mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _del_mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_ENTER;
 	_D("del mouse up");
 	elm_object_signal_emit((Evas_Object *)data, "released", "slot");
 }
 
-static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_ENTER;
 	_D("del mouse clicked");
 
 	char index[10] = {0};
 	Evas_Object *slot = NULL;
 	int ret = 0;
-	Evas_Coord x,y,w,h;
+	Evas_Coord x, y, w, h;
 	int pos = 0;
 
-	if(transit_go){
+	if (transit_go) {
 		_E("transit is now processing");
 		return;
 	}
 
 	evas_object_geometry_get((Evas_Object *)data, &x, &y, &w, &h);
-	_D("X:%d,y:%d,w:%d,h:%d",x,y,w,h);
-	if((x == 130 || x==127) &&( y == 21||y==18))
+	_D("X:%d, y:%d, w:%d, h:%d", x, y, w, h);
+	if ((x == 130 || x == 127) && (y == 21 || y == 18))
 		pos = 1;
-	else if((x == 239||x==236) &&( y == 130||y==127))
+	else if ((x == 239 || x == 236) && (y == 130 || y == 127))
 		pos = 2;
-	else if((x == 130||x==127) && (y == 219||y==216))
+	else if ((x == 130 || x == 127) && (y == 219 || y == 216))
 		pos = 3;
-	else if((x == 21||x==18) &&( y == 130||y==127))
+	else if ((x == 21 || x == 18) && (y == 130 || y == 127))
 		pos = 4;
-	else{
+	else {
 		_E("can't reach here.");
 		return;
 	}
@@ -375,7 +378,7 @@ static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emissi
 	_D("%s", index);
 	slot_index = pos - 1;
 	slot = elm_object_part_content_unset(g_info->edit_layout, index);
-	if(slot){
+	if (slot) {
 		evas_object_del(slot);
 		slot = NULL;
 	}
@@ -384,9 +387,9 @@ static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emissi
 	slot = elm_layout_add(g_info->edit_layout);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(slot, full_path, "empty_slot");
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		_E("failed to set empty slot");
 		return;
 	}
@@ -400,7 +403,7 @@ static void _del_mouse_clicked_cb(void *data, Evas_Object *o, const char *emissi
 	evas_object_show(slot);
 	g_info->appid_list[slot_index] = strdup("empty");
 	empty_count++;
-	updateContent();
+	//updateContent();
 
 }
 
@@ -408,30 +411,26 @@ static void _down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
 	_ENTER;
 	Evas_Object *icon = NULL;
-	Evas_Coord x,y,w,h;
+	Evas_Coord x, y, w, h;
 	evas_object_geometry_get((Evas_Object *)data, &x, &y, &w, &h);
-	_D("x:%d, y:%d, w:%d, h:%d",x,y,w,h);
-	if(transit_go){
+	_D("x:%d, y:%d, w:%d, h:%d", x, y, w, h);
+	if (transit_go) {
 		_E("transit is now processing");
 		return;
 	}
-	if((x == 130 || x==127) && (y == 21|| y==18)){
+	if ((x == 130 || x == 127) && (y == 21 || y == 18)) {
 		pressed_index = 1;
 		dst_index = 1;
-	}
-	else if((x == 239||x==236) && (y == 130||y==127)){
+	} else if ((x == 239 || x == 236) && (y == 130 || y == 127)) {
 		pressed_index = 2;
 		dst_index = 2;
-	}
-	else if((x == 130||x==127) && (y == 219||y==216)){
+	} else if ((x == 130 || x == 127) && (y == 219 || y == 216)) {
 		pressed_index = 3;
 		dst_index = 3;
-	}
-	else if((x == 21||x==18) && (y == 130||y==127)){
+	} else if ((x == 21 || x == 18) && (y == 130 || y == 127)) {
 		pressed_index = 4;
 		dst_index = 4;
-	}
-	else{
+	} else {
 		_E("can't reach here.");
 		return;
 	}
@@ -441,7 +440,8 @@ static void _down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	longpress_timer = ecore_timer_add(0.5, _longpress_timer_cb, obj);
 }
 
-static void _transit_del_cb(void *data, Elm_Transit *transit){
+static void _transit_del_cb(void *data, Elm_Transit *transit)
+{
 	_ENTER;
 	_D("transit end");
 	char index[10] = {0};
@@ -453,9 +453,10 @@ static void _transit_del_cb(void *data, Elm_Transit *transit){
 	transit_obj = NULL;
 }
 
-static void _anim_switch_item(Evas_Object *item, int src, int dst){
+static void _anim_switch_item(Evas_Object *item, int src, int dst)
+{
 	_ENTER;
-	if(transit_go == EINA_TRUE) return;
+	if (transit_go == EINA_TRUE) return;
 	transit_go = EINA_TRUE;
 	Elm_Transit *transit = elm_transit_add();
 	elm_transit_object_add(transit, item);
@@ -466,40 +467,36 @@ static void _anim_switch_item(Evas_Object *item, int src, int dst){
 	elm_transit_tween_mode_factor_n_set(transit, 4, v);
 	elm_transit_objects_final_state_keep_set(transit, EINA_TRUE);
 
-	if(dst == 4){
-		if(src == 1)
+	if (dst == 4) {
+		if (src == 1)
 			elm_transit_effect_translation_add(transit, 0, 0, -109, 109);
-		else if(src == 2)
+		else if (src == 2)
 			elm_transit_effect_translation_add(transit, 0, 0, -218, 0);
-		else if(src == 3)
+		else if (src == 3)
 			elm_transit_effect_translation_add(transit, 0, 0, -109, -89);
-	}
-	else if(dst == 3){
-		if(src == 1)
+	} else if (dst == 3) {
+		if (src == 1)
 			elm_transit_effect_translation_add(transit, 0, 0, 0, 198);
-		else if(src == 2)
+		else if (src == 2)
 			elm_transit_effect_translation_add(transit, 0, 0, -109, 89);
-		else if(src == 4)
+		else if (src == 4)
 			elm_transit_effect_translation_add(transit, 0, 0, 109, 89);
 
-	}
-	else if(dst == 2){
-		if(src == 1)
+	} else if (dst == 2) {
+		if (src == 1)
 			elm_transit_effect_translation_add(transit, 0, 0, 109, 109);
-		else if(src == 3)
+		else if (src == 3)
 			elm_transit_effect_translation_add(transit, 0, 0, 109, -89);
-		else if(src == 4)
+		else if (src == 4)
 			elm_transit_effect_translation_add(transit, 0, 0, 218, 0);
-	}
-	else if(dst == 1){
-		if(src == 2)
+	} else if (dst == 1) {
+		if (src == 2)
 			elm_transit_effect_translation_add(transit, 0, 0, -109, -109);
-		else if(src == 3)
+		else if (src == 3)
 			elm_transit_effect_translation_add(transit, 0, 0, 0, -198);
-		else if(src == 4)
+		else if (src == 4)
 			elm_transit_effect_translation_add(transit, 0, 0, 109, -109);
-	}
-	else{
+	} else {
 		_E("can't reach here");
 	}
 	elm_transit_duration_set(transit, 0.3);
@@ -515,50 +512,47 @@ static void _move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	char *tmp = NULL;
 	cur_x = ev->cur.output.x;
 	cur_y = ev->cur.output.y;
-	if(longpress_flag){
+	if (longpress_flag) {
 		evas_object_move(obj, cur_x-80, cur_y-100);
-		if(cur_x > 130 && cur_x < 230 && cur_y > 30 && cur_y < 130){
-			if(pressed_index != 1 && !transit_go){
+		if (cur_x > 130 && cur_x < 230 && cur_y > 30 && cur_y < 130) {
+			if (pressed_index != 1 && !transit_go) {
 				_D("index 1 area");
 				Evas_Object *item = elm_object_part_content_unset(g_info->edit_layout, "index1");
 				_anim_switch_item(item, 1, pressed_index);
 				tmp = strdup(g_info->appid_list[pressed_index-1]);
 				g_info->appid_list[pressed_index-1] = strdup(g_info->appid_list[0]);
 				g_info->appid_list[0] = strdup(tmp);
-				if(tmp) free(tmp);
+				if (tmp) free(tmp);
 			}
-		}
-		else if(cur_x > 230 && cur_x < 330 && cur_y > 130 && cur_y < 230){
-			if(pressed_index != 2 && !transit_go){
+		} else if (cur_x > 230 && cur_x < 330 && cur_y > 130 && cur_y < 230) {
+			if (pressed_index != 2 && !transit_go) {
 				_D("index 2 area");
 				Evas_Object *item = elm_object_part_content_unset(g_info->edit_layout, "index2");
 				_anim_switch_item(item, 2, pressed_index);
 				tmp = strdup(g_info->appid_list[pressed_index-1]);
 				g_info->appid_list[pressed_index-1] = strdup(g_info->appid_list[1]);
 				g_info->appid_list[1] = strdup(tmp);
-				if(tmp) free(tmp);
+				if (tmp) free(tmp);
 			}
-		}
-		else if(cur_x > 130 && cur_x < 230 && cur_y > 219 && cur_y < 319){
-			if(pressed_index != 3 && !transit_go){
+		} else if (cur_x > 130 && cur_x < 230 && cur_y > 219 && cur_y < 319) {
+			if (pressed_index != 3 && !transit_go) {
 				_D("index 3 area");
 				Evas_Object *item = elm_object_part_content_unset(g_info->edit_layout, "index3");
 				_anim_switch_item(item, 3, pressed_index);
 				tmp = strdup(g_info->appid_list[pressed_index-1]);
 				g_info->appid_list[pressed_index-1] = strdup(g_info->appid_list[2]);
 				g_info->appid_list[2] = strdup(tmp);
-				if(tmp) free(tmp);
+				if (tmp) free(tmp);
 			}
-		}
-		else if(cur_x > 30 && cur_x < 130 && cur_y > 130 && cur_y < 230){
-			if(pressed_index != 4 && !transit_go){
+		} else if (cur_x > 30 && cur_x < 130 && cur_y > 130 && cur_y < 230) {
+			if (pressed_index != 4 && !transit_go) {
 				_D("index 4 area");
 				Evas_Object *item = elm_object_part_content_unset(g_info->edit_layout, "index4");
 				_anim_switch_item(item, 4, pressed_index);
 				tmp = strdup(g_info->appid_list[pressed_index-1]);
 				g_info->appid_list[pressed_index-1] = strdup(g_info->appid_list[3]);
 				g_info->appid_list[3] = strdup(tmp);
-				if(tmp) free(tmp);
+				if (tmp) free(tmp);
 			}
 		}
 	}
@@ -572,14 +566,14 @@ static void _up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	int cur_x, cur_y;
 	cur_x = ev->output.x;
 	cur_y = ev->output.y;
-	_D("cur_x:%d,cur_y:%d",cur_x,cur_y);
+	_D("cur_x:%d,cur_y:%d", cur_x, cur_y);
 	char index[10] = {0};
 	snprintf(index, sizeof(index)-1, "index%d", dst_index);
-	if(longpress_timer){
+	if (longpress_timer) {
 		ecore_timer_del(longpress_timer);
 		longpress_timer = NULL;
 	}
-	if(longpress_flag == EINA_TRUE){
+	if (longpress_flag == EINA_TRUE) {
 		longpress_flag = EINA_FALSE;
 		elm_object_part_content_set(g_info->edit_layout, index, obj);
 		launch_flag = EINA_FALSE;
@@ -589,7 +583,7 @@ static void _up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	evas_object_color_set(icon, 255, 255, 255, 255);
 	elm_object_signal_emit(obj, "released", "widget_plus");
 	elm_object_signal_emit(obj, "show", "slot");
-	updateContent();
+	//updateContent();
 }
 
 static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
@@ -602,9 +596,9 @@ static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
 	retv_if(!page, NULL);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	int ret = elm_layout_file_set(page, full_path, "item");
-	_D("ret:%d",ret);
+	_D("ret:%d", ret);
 
 	evas_object_size_hint_weight_set(page, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_align_set(page, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -618,7 +612,7 @@ static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
 
 	icon = evas_object_image_add(evas_object_evas_get(page));
 	evas_object_repeat_events_set(icon, EINA_TRUE);
-	_D("icon:%s ,name:%s",item_info->icon,item_info->name);
+	_D("icon:%s ,name:%s", item_info->icon, item_info->name);
 	evas_object_image_file_set(icon, item_info->icon, NULL);
 	evas_object_image_filled_set(icon, EINA_TRUE);
 	evas_object_show(icon);
@@ -635,7 +629,8 @@ static Evas_Object *_create_item(Evas_Object *scroller, item_info_s *item_info)
 	return page;
 }
 
-void app_shortcut_show_name(Evas_Object *page){
+void app_shortcut_show_name(Evas_Object *page)
+{
 	_ENTER;
 	appdata_s *info = _get_info();
 	item_info_s *item_info = NULL;
@@ -643,7 +638,7 @@ void app_shortcut_show_name(Evas_Object *page){
 
 	page = home_custom_scroller_get_current_page(info->scroller);
 
-	if(item_info){
+	if (item_info) {
 		_D("get item info from the page. %s", item_info->name);
 		elm_object_part_text_set(info->select_layout, "name", item_info->name);
 		elm_object_signal_emit(info->select_layout, "show_name", "name");
@@ -653,10 +648,11 @@ void app_shortcut_show_name(Evas_Object *page){
 
 }
 
-void app_shortcut_hide_name(){
+void app_shortcut_hide_name()
+{
 	_ENTER;
 	appdata_s *info = _get_info();
-	if(hide_flag == EINA_FALSE){
+	if (hide_flag == EINA_FALSE) {
 		_D("hide app name");
 		elm_object_signal_emit(info->select_layout, "hide_name", "name");
 		hide_flag = EINA_TRUE;
@@ -664,7 +660,8 @@ void app_shortcut_hide_name(){
 
 }
 
-Evas_Object *_set_app_slot(const char *appid, int pos){
+Evas_Object *_set_app_slot(const char *appid, int pos)
+{
 	_ENTER;
 	pkgmgrinfo_appinfo_h appinfo_h = NULL;
 	_D("%s", appid);
@@ -676,14 +673,14 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 	snprintf(index, sizeof(index)-1, "index%d", pos+1);
 	char *label = NULL;
 
-	if(!strcmp(appid, "empty")){
+	if (!strcmp(appid, "empty")) {
 		slot = elm_layout_add(g_info->edit_layout);
 
 		char full_path[PATH_MAX] = { 0, };
 		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-		_D("full_path:%s",full_path);
+		_D("full_path:%s", full_path);
 		ret = elm_layout_file_set(slot, full_path, "empty_slot");
-		if(ret == EINA_FALSE){
+		if (ret == EINA_FALSE) {
 			_E("failed to set empty slot");
 			return NULL;
 		}
@@ -699,10 +696,9 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 		evas_object_show(slot);
 		g_info->appid_list[pos] = strdup(appid);
 		empty_count++;
-	}
-	else{
+	}  else {
 		pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h);
-			if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon_path_tmp)){
+			if (PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon_path_tmp)) {
 				_E("get icon path failed");
 			}
 			if (icon_path_tmp) {
@@ -715,11 +711,10 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 			}
 
 
-		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)){
+		if (PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)) {
 			_E("get label failed");
 			g_info->applabel_list[pos] = strdup("");
-		}
-		else{
+		} else {
 			g_info->applabel_list[pos] = strdup(label);
 		}
 		_D("icon path in object info %s", icon_path_tmp);
@@ -727,11 +722,11 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 		slot = elm_layout_add(g_info->edit_layout);
 		char full_path[PATH_MAX] = { 0, };
 		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-		_D("full_path:%s",full_path);
+		_D("full_path:%s", full_path);
 		ret = elm_layout_file_set(slot, full_path, "icon_slot");
-		if(ret == EINA_FALSE){
+		if (ret == EINA_FALSE) {
 			_E("failed to set empty slot");
-			if(icon_path_tmp)
+			if (icon_path_tmp)
 				free(icon_path_tmp);
 			return NULL;
 		}
@@ -766,16 +761,17 @@ Evas_Object *_set_app_slot(const char *appid, int pos){
 	return slot;
 }
 
-static void _create_edit_layout(appdata_s *info){
+static void _create_edit_layout(appdata_s *info)
+{
 	_ENTER;
 	int ret = 0;
 	Evas_Object *layout = NULL;
 	layout = elm_layout_add(info->edit_win);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(layout, full_path, "edit_layout");
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		_E("failed to set layout");
 		return;
 	}
@@ -788,7 +784,8 @@ static void _create_edit_layout(appdata_s *info){
 }
 
 
-static void _create_layout(appdata_s *info){
+static void _create_layout(appdata_s *info)
+{
 	_ENTER;
 	Evas_Object *layout = NULL;
 	int ret = 0;
@@ -797,9 +794,9 @@ static void _create_layout(appdata_s *info){
 	layout = elm_layout_add(info->select_win);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(layout, full_path, "layout");
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		_E("failed to set layout");
 		return;
 	}
@@ -822,7 +819,7 @@ static void _create_layout(appdata_s *info){
 	scroller_info->edge_height = 360;//165;
 
 	Evas_Object *scroller = home_custom_scroller_add(layout, scroller_info);
-	if(!scroller){
+	if (!scroller) {
 		_E("scroller is NULL");
 		free(scroller_info);
 		return;
@@ -841,10 +838,9 @@ static void _create_layout(appdata_s *info){
 	Evas_Object *apps_item = NULL;
 	g_info->item_list = NULL;
 	apps_item_info = apps_item_info_create(APPS_PKG);
-	if(NULL == apps_item_info){
+	if (NULL == apps_item_info) {
 		_E("failed to create item info");
-	}
-	else{
+	} else {
 		free(apps_item_info->name);
 		apps_item_info->name = strdup(IDS_IDLE_BODY_APPS);
 		_D("%s,%s,%s", apps_item_info->appid, apps_item_info->icon, apps_item_info->name);
@@ -856,13 +852,13 @@ static void _create_layout(appdata_s *info){
 	Eina_List *n = NULL;
 	EINA_LIST_FOREACH_SAFE(item_info_list, l, n, item_info) {
 		Evas_Object *page_item = NULL;
-		_D("create item for each pkg pkgid:%s",item_info->pkgid);
+		_D("create item for each pkg pkgid:%s", item_info->pkgid);
 		page_item = _create_item(scroller, item_info);
 		g_info->item_list = eina_list_append(g_info->item_list, page_item);
 	}
 	eina_list_free(item_info_list);
 	Evas_Object *index = home_custom_scroller_index_add(layout, scroller);
-	if(!index) return;
+	if (!index) return;
 
 	elm_object_part_content_set(layout, "index", index);
 
@@ -998,7 +994,7 @@ item_info_s *apps_recent_info_create(const char *appid)
 	item_info->appid = strdup(appid);
 	goto_if(NULL == item_info->appid, ERROR);
 
-	if(name){
+	if (name) {
 		item_info->name = strdup(name);
 		goto_if(NULL == item_info->name, ERROR);
 	}
@@ -1068,7 +1064,7 @@ item_info_s *apps_item_info_create(const char *appid)
 
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &name), ERROR);
 	goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon), ERROR);
-	_D("name:%s, icon:%s",name,icon);
+	_D("name:%s, icon:%s", name, icon);
 
 	do {
 		break_if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_pkgid(appinfo_h, &pkgid));
@@ -1078,7 +1074,7 @@ item_info_s *apps_item_info_create(const char *appid)
 		break_if(NULL == pkghandle);
 	} while (0);
 
-	if(strncmp(appid, APPS_PKG, strlen(APPS_PKG))){
+	if (strncmp(appid, APPS_PKG, strlen(APPS_PKG))) {
 		goto_if(PMINFO_R_OK != pkgmgrinfo_appinfo_is_nodisplay(appinfo_h, &nodisplay), ERROR);
 		if (nodisplay) goto ERROR;
 
@@ -1098,11 +1094,10 @@ item_info_s *apps_item_info_create(const char *appid)
 	goto_if(NULL == item_info->appid, ERROR);
 
 	if (name) {
-		if(!strncmp(appid, APPS_PKG, strlen(APPS_PKG))) {
+		if (!strncmp(appid, APPS_PKG, strlen(APPS_PKG))) {
 			item_info->name = strdup(_("IDS_IDLE_BODY_APPS"));
 			goto_if(NULL == item_info->name, ERROR);
-		}
-		else{
+		} else {
 			item_info->name = strdup(name);
 			goto_if(NULL == item_info->name, ERROR);
 		}
@@ -1175,7 +1170,7 @@ static int _apps_all_cb(pkgmgrinfo_appinfo_h handle, void *user_data)
 	retv_if(NULL == user_data, 0);
 
 	pkgmgrinfo_appinfo_get_appid(handle, &appid);
-	_D("appid:%s",appid);
+	_D("appid:%s", appid);
 	retv_if(NULL == appid, 0);
 
 	item_info = apps_item_info_create(appid);
@@ -1205,7 +1200,8 @@ ERROR:
 	return *list;
 }
 
-static Eina_Bool _load_list(void* data){
+static Eina_Bool _load_list(void* data)
+{
 	Eina_List *pkgmgr_list = NULL;
 	g_info->app_list = _read_all_apps(&pkgmgr_list);
 	_create_layout(g_info);
@@ -1241,6 +1237,7 @@ static void app_control(app_control_h service, void *data)
 	_ENTER;
 	_D("test");
 	char *content = NULL;
+	char* content_bundle = NULL;
 
 	char *tmp = NULL;
 	char *first = NULL;
@@ -1251,86 +1248,57 @@ static void app_control(app_control_h service, void *data)
 
 
 
-	char *instance_id = NULL;
-	ret = app_control_get_extra_data(service, "instance_id", &instance_id);
-	if(!ret)
-	{
-		_E("widget id is null check");
-	}
-	widget_id = strdup(APP_WIDGET_CONTENT_KEY);
-	bool prefkey_exist = false;
-	ret = preference_is_existing(widget_id, &prefkey_exist);
-	if(ret !=PREFERENCE_ERROR_NONE)
-	{
-		_E("preference_is_existing api failed ret:%d ",ret);
-		content = strdup(DEFAULT_APP_ORDER);
-	}
-	else
-	{
-		_D("preference_is_existing api success");
-		if(prefkey_exist)
-		{
-			_D("preference key is already exist");
-			ret = preference_get_string(widget_id, &content);
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_get_string api failed, so load default app order ret:%d",ret);
-				content = strdup(DEFAULT_APP_ORDER);
-			}
-		}
-		else
-		{
-			_E("preference_key is not exist. check why key is not present. key should present always");
-			ret = preference_set_string(widget_id, DEFAULT_APP_ORDER);
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_set_string api failed ret:%d",ret);
-			}
-			content = strdup(DEFAULT_APP_ORDER);
-		}
-	}
-	_D("content: %s",content);
-
-
-	if(!content){
-		_E("there is no content info.");
-		tmp = strdup("empty empty empty empty");
-		content = strdup("empty empty empty empty");
-	}
-	else{
-		tmp = strdup(content);
+	char *id = NULL;
+	
+	ret = app_control_get_extra_data(service, "content_info", &content_bundle);
+	if (ret != 0) {
+		_E("bundle  is null check with widget team ret:%d", ret);
+		return;
 	}
 
-	for(i = 0 ; i < 4 ; i++){
-		if(i == 0){
-			first = strtok_r(tmp, " ",&save);
-			if(content)
-			{
-				if(!strcmp(first, content)){
+	bundle* b =  bundle_decode((const bundle_raw *)content_bundle, strlen(content_bundle));
+	ret = bundle_get_str(b, BUNDLE_ID_KEY, &widget_id);
+	if (ret != 0) {
+		_E("bundle decode failed");
+	}
+	_D("widget_id: %s", widget_id);
+	ret = bundle_get_str(b, BUNDLE_CONTENT_KEY, &content);
+	if (ret != 0) {
+		_E("bundle decode failed");
+	}
+	_D("content: %s", content);
+
+
+	tmp = strdup(content);
+	
+
+	for (i = 0 ; i < 4 ; i++) {
+		if (i == 0) {
+			first = strtok_r(tmp, " ", &save);
+			if (content) {
+				if (!strcmp(first, content)) {
 					_E("content info format is not proper");
 					reset = 1;
 					break;
-				}
-				else{
+				} else {
 					_set_app_slot(first, i);
 				}
 			}
-		}
-		else{
-			_set_app_slot(strtok_r(NULL, " ",&save), i);
+		} else {
+			_set_app_slot(strtok_r(NULL, " ", &save), i);
 		}
 	}
 
-	if(reset == 1){
+	if (reset == 1) {
 		_E("reset the content value.");
-		if(tmp){
+		if (tmp) {
 			free(tmp);
 			tmp = NULL;
 		}
 		tmp = strdup(DEFAULT_APP_ORDER);
 		bundle *b = NULL;
 		b = bundle_create();
-		if(!b){
+		if (!b) {
 			_E("failed to create bundle");
 			free(content);
 			free(tmp);
@@ -1340,23 +1308,22 @@ static void app_control(app_control_h service, void *data)
 		bundle_add_str(b, "test", tmp);
 		_D("content : %s", tmp);
 
-		if(WIDGET_ERROR_NONE != ret){
+		if (WIDGET_ERROR_NONE != ret) {
 			_E("app-widget trigger failed %x", ret);
 		}
-		if(b){
+		if (b) {
 			free(b);
 		}
 
-		for(i = 0 ; i < 4 ; i++){
-			if(i == 0){
-				first = strtok_r(tmp, " ",&save);
+		for (i = 0 ; i < 4 ; i++) {
+			if (i == 0) {
+				first = strtok_r(tmp, " ", &save);
 				_set_app_slot(first, i);
-			}
-			else{
-				_set_app_slot(strtok_r(NULL, " ",&save), i);
+			} else {
+				_set_app_slot(strtok_r(NULL, " ", &save), i);
 			}
 		}
-		updateContent();
+		//updateContent();
 	}
 
 	free(content);

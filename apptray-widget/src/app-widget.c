@@ -26,7 +26,6 @@
 #include <aul.h>
 
 
-#include <badge.h>
 #include "app-widget_log.h"
 
 #ifndef TELEPHONY_DISABLE
@@ -61,13 +60,13 @@
  #define WHOME_APP_CONTROL "home_op"
 
 #define DEFAULT_APP_ORDER "org.tizen.apptray-widget-app empty org.tizen.watch-setting empty"
-#define BADGE_SIGNAL_LEN 16
-#define MAX_BADGE_COUNT 999
+#define BUNDLE_CONTENT_KEY "content"
+#define BUNDLE_ID_KEY "id"
+
 #define SHORTCUT_W 123
-#define SHORTCUT_H 123 
+#define SHORTCUT_H 123
 
 
-static Eina_List *s_list;
 Eina_List *font_theme;
 Elm_Theme *theme;
 char *icon_path;
@@ -83,6 +82,8 @@ struct info {
 	struct object_info *obj[5];
 	int need_to_delete;
 	int first_loaded;
+	widget_context_h context;
+	bundle* content_bundle;
 };
 
 struct object_info {
@@ -102,7 +103,6 @@ struct object_info {
 
 
 
-void item_badge_unregister_changed_cb(void);
 static void _set_app_slot(struct info *item, const char *appid, int pos);
 
 
@@ -116,72 +116,26 @@ static void _get_resource(const char *file_in, char *file_path_out, int file_pat
 	}
 }
 
+PUBLIC void widget_update_content(struct info* item);
 
-static inline struct info *find_item(char* id)
-{
-	_ENTER;
-	struct info *item=NULL;
-
-	Eina_List *l;
-
-	EINA_LIST_FOREACH(s_list, l, item) {
-			_D("item->id:%s,id:%s",item->id,id);
-			if (!strncmp(item->id, id, strlen(id))) {
-					return item;
-			}
-	}
-	return item;
-}
-
-PUBLIC int widget_update_content(const char* id);
-
+//Todo to be removed once widget service trigger update api works
 
 void preference_changed_cb_impl(const char *key, void *user_data)
 {
 	_ENTER;
-	char *id= *((char**)user_data);
-	_D("id:%s,  key:%s",id,key);
-	struct info *item;
-	if(!id)
-	{
-		_E("id is null");
-		return;
-	}
-	item = find_item((char*)id);
+	struct info *item = (struct info*)user_data;
+	_D("key:%s", key);
 	if (!item) {
-		 _E("id is invalid");
-		_E("item is not found");
+		_E("item is null");
 		return;
 	}
-	_D("before content: %s",item->content);
-    preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
-
-    _D("after content: %s",item->content);
-
-	widget_update_content((const char *)id);
-
+	_D("before content: %s", item->content);
+	 preference_get_string((char*)item->context, &item->content);
+	 _D("after content: %s", item->content);
+	widget_update_content(item);
 	_EXIT;
 }
 
-
-bool _is_arabic(const char *lang){
-	_ENTER;
-	char lang_tmp[10] = { 0, };
-	char ar[3] = { 0, };
-	int i = 0;
-	strncpy(lang_tmp, lang,sizeof(lang_tmp));
-
-	for(i = 0 ; i < 2; i++){
-		ar[i] = lang_tmp[i];
-	}
-	ar[2] = '\0';
-
-	if (!strncmp(ar, LANGUAGE_ARABIC, strlen(LANGUAGE_ARABIC))) {
-		return true;
-	}else{
-		return false;
-	}
-}
 
 static void _init_theme(void)
 {
@@ -192,79 +146,19 @@ static void _init_theme(void)
 
 
 
-static void _fini_theme(void)
-{
-	_ENTER;
-	elm_theme_free(theme);
-	theme = NULL;
-
-}
-
-#define LOCALE_LEN 32
-char *util_get_count_str_from_icu(int count)
-{
-	_ENTER;
-	char *p = NULL;
-	char *locale_tmp = NULL;
-	char *ret_str = NULL;
-	char locale[LOCALE_LEN] = { 0, };
-	char res[LOCALE_LEN] = { 0, };
-
-
-	strncpy(locale, locale_tmp,sizeof(locale));
-	free(locale_tmp);
-
-	if(locale[0] != '\0') {
-		p = strstr(locale, ".UTF-8");
-		if (p) *p = 0;
-	}
-
-	ret_str = strdup(res);
-	return ret_str;
-}
-PUBLIC int widget_initialize(const char *pkgname)
-{
-	_ENTER;
-	_D("dbox initialized");
-	
-	return 0;
-}
-
-PUBLIC int widget_finalize(void)
-{
-	_ENTER;
-	_D("dbox finalized");
-	
-	_fini_theme();
-	return 0;
-}
 
 
 // NOTE: This function is going to be invoked for release all resources
-static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *content, void *user_data)
+static int widget_destroy(widget_context_h context, widget_app_destroy_type_e reason, bundle *content, void *user_data)
 {
 	_ENTER;
-	struct info *item;
-	_D("[%s:%d]\n", __func__, __LINE__);
-
-	item = find_item((char *)id);
+	struct info *item = NULL;
+	widget_app_context_get_tag(context, (void**)&item);
 	if (!item) {
-			/*!
-			 * \NOTE
-			 * EXCEPTIONAL CASES
-			 */
 			 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
 	}
-	if(!item->need_to_delete){
-		_E("dbox didn't receive the DELETE event");
-		if (item->dbox_win) {
-				evas_object_del(item->dbox_win);
-		}
-		return WIDGET_ERROR_NONE;
-	}
-
-	s_list = eina_list_remove(s_list, item);
+	preference_remove((char*)context);
 
 	/* NOTE: You have to clear all resource which are related with
 	 *       current instance. If you didn't clear it correctly,
@@ -274,31 +168,14 @@ static int widget_destroy(char* id, widget_app_destroy_type_e reason, bundle *co
 	if (item->dbox_win) {
 			evas_object_del(item->dbox_win);
 	}
-    item->first_loaded = 0;
-    item->w= item->h=0;
+	item->first_loaded = 0;
+	item->w = item->h = 0;
 	free(item->content);
 	free(item->id);
 	free(item);
-	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
 	return WIDGET_ERROR_NONE;
 }
 
-PUBLIC int widget_need_to_update(const char* id)
-{
-	_ENTER;
-	struct info *item;
-
-	_D("[%s]\n", id);
-
-	item = find_item((char *)id);
-	if (!item) {
-		
-		 _E("id is invalid");
-		return WIDGET_ERROR_NOT_EXIST;
-	}
-
-	return 0;
-}
 
 static void _glow_effect_done(void *data, Evas_Object *o, const char *emission, const char *source)
 {
@@ -307,170 +184,15 @@ static void _glow_effect_done(void *data, Evas_Object *o, const char *emission, 
 	elm_object_signal_emit((Evas_Object *)data, "complete_effect", "widget");
 }
 
-void app_shortcut_remove_package(const char *package){
-	_ENTER;
-	_D("remove %s", package);
-	Eina_List *l;
-	struct info *item;
-	int update = 0;
-	char content[255] = {0};
-	int i = 0;
 
-	EINA_LIST_FOREACH(s_list, l, item) {
-		for(i = 0 ; i < 4 ; i++){
-			if(strcmp(item->obj[i]->appid, "empty")){
-				if(!strcmp(item->obj[i]->pkgid, package)){
-					update = 1;
-					_set_app_slot(item, "empty", i);
-				}
-			}
-		}
-		if(update){
-			snprintf(content, sizeof(content)-1, "%s %s %s %s", item->obj[0]->appid, item->obj[1]->appid, item->obj[2]->appid, item->obj[3]->appid);
-			free(item->content);
-			item->content = NULL;
-			item->content = strdup(content);
-			update = 0;
-		}
-	}
-}
-
-int item_badge_count(struct object_info *item)
+static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source)
 {
-	_ENTER;
-	unsigned int is_display = 0;
-	unsigned int count = 0;
-	badge_error_e err = BADGE_ERROR_NONE;
-
-	retv_if(!item, 0);
-
-	err = badge_get_display(item->appid, &is_display);
-	_D("badge_get_display err:%d",err);
-	if (BADGE_ERROR_NONE != err) _E("cannot get badge display");
-
-	if (!is_display) return 0;
-
-	err = badge_get_count(item->appid, &count);
-	if (BADGE_ERROR_NONE != err) _E("cannot get badge count");
-
-	_D("Badge for app %s : %u", item->appid, count);
-	_EXIT;
-	return (int) count;
-}
-
-void item_badge_show(struct object_info *item, int count)
-{
-	_ENTER;
-	char *str = NULL;
-	char badge_signal[16];
-
-	ret_if(!item);
-
-	if (count > MAX_BADGE_COUNT) count = MAX_BADGE_COUNT;
-
-	str = util_get_count_str_from_icu(count);
-	elm_object_part_text_set(item->obj, "badge_txt", str);
-
-	if (count <= 0) {
-		snprintf(badge_signal, sizeof(badge_signal), "badge,off");
-	} else if (count < 10) {
-		snprintf(badge_signal, sizeof(badge_signal), "badge,on,1");
-	} else if (count < 100) {
-		snprintf(badge_signal, sizeof(badge_signal), "badge,on,2");
-	} else {
-		int nRightPos = ((item->index) == 2);
-		_D("nRightPos : %d", nRightPos);
-		if(nRightPos) {
-			snprintf(badge_signal, sizeof(badge_signal), "badge,on,3r");
-		}
-		else {
-			snprintf(badge_signal, sizeof(badge_signal), "badge,on,3");
-		}
-	}
-	elm_object_signal_emit(item->obj, badge_signal, "slot");
-
-	free(str);
-}
-
-void item_badge_hide(struct object_info *item)
-{
-	_ENTER;
-	ret_if(!item);
-
-	elm_object_signal_emit(item->obj, "badge,off", "slot");
-}
-
-
-static void _badge_change_cb(unsigned int action, const char *appid, unsigned int count, void *data)
-{
-	_ENTER;
-	unsigned int is_display = 0;
-	badge_error_e err = BADGE_ERROR_NONE;
-	int i = 0;
-
-	_D("Badge changed, action : %u, appid : %s, count : %u", action, appid, count);
-
-	ret_if(!appid);
-
-	if (BADGE_ACTION_REMOVE == action) {
-		count = 0;
-		is_display = 0;
-	} else {
-		err = badge_get_display(appid, &is_display);
-		if (BADGE_ERROR_NONE != err) _E("cannot get badge display");
-		if (!is_display) count = 0;
-	}
-
-	Eina_List *l;
-	struct info *item;
-
-	EINA_LIST_FOREACH(s_list, l, item) {
-		for(i = 0 ; i < 4 ; i++){
-			if(!strcmp(item->obj[i]->appid, appid)){
-				if (count) item_badge_show(item->obj[i], count);
-				else item_badge_hide(item->obj[i]);
-			}
-		}
-	}
-}
-
-
-void item_badge_register_changed_cb(void)
-{
-	_ENTER;
-	badge_error_e err;
-
-	err = badge_register_changed_cb(_badge_change_cb, NULL);
-	ret_if(BADGE_ERROR_NONE != err);
-}
-
-void item_badge_unregister_changed_cb(void)
-{
-	_ENTER;
-	badge_error_e err;
-
-	err = badge_unregister_changed_cb(_badge_change_cb);
-	ret_if(BADGE_ERROR_NONE != err);
-}
-
-
-static void _slot_l_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
-	_D("icon clicked");
-	_ENTER;
-}
-
-static void _slot_r_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
-	_D("icon clicked");
-	_ENTER;
-}
-
-static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
 	_D("icon clicked");
 	_ENTER;
 
 	struct object_info *info = NULL;
 	info = data;
-	if(!strcmp(info->appid, APPS_PKG)){
+	if (!strcmp(info->appid, APPS_PKG)) {
 		app_control_h service = NULL;
 		char *type = APP_LAUNCH_KEY;
 
@@ -490,18 +212,16 @@ static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 		}
 
 		app_control_destroy(service);
-	}
-	else{
+	} else {
 		_D("launch %s", info->appid);
-		if(info->open_app){
+		if (info->open_app) {
 			_D("launch wgt");
 			int ret_aul  = aul_open_app(info->appid);
 			if (ret_aul < AUL_R_OK) {
 				_E("wgt launch failed");
 				return;
 			}
-		}
-		else{
+		} else {
 			_D("launch normal");
 			app_control_h service = NULL;
 
@@ -519,59 +239,27 @@ static void _slot_mouse_clicked_cb(void *data, Evas_Object *o, const char *emiss
 				app_control_destroy(service);
 				return;
 			}
-
 			app_control_destroy(service);
 		}
 	}
 
 }
 
-char *_get_date(void)
+static void _set_app_slot(struct info *item, const char *appid, int pos) 
 {
-	_ENTER;
-	struct tm st;
-	time_t tt = time(NULL);
-	localtime_r(&tt, &st);
-
-	char str_date[5] = {0,};
-	char *date = NULL;
-
-	snprintf(str_date, sizeof(str_date), "%d", st.tm_mday);
-
-	date = strdup(str_date);
-
-	return date;
-}
-
-static void _slot_mouse_down_cb(void *data, Evas_Object *o, const char *emission, const char *source){
-	_D("icon mouse down");
-	_ENTER;
-	evas_object_color_set((Evas_Object *)data, 255, 255, 255, 127);
-}
-
-static void _slot_mouse_up_cb(void *data, Evas_Object *o, const char *emission, const char *source){
-	_D("icon mouse up");
-	_ENTER;
-	evas_object_color_set((Evas_Object *)data, 255, 255, 255, 255);
-}
-
-
-
-static void _set_app_slot(struct info *item, const char *appid, int pos){
 	_ENTER;
 	_D("%s %s", appid, item->obj[pos]->appid);
 
-	if(!appid){
+	if (!appid) {
 		_E("appid is null");
 		return;
 	}
-	if(!strcmp(appid, item->obj[pos]->appid)){
+	if (!strcmp(appid, item->obj[pos]->appid)) {
 		_D("appid is same, no need to update");
 		return;
-	}else{
+	} else {
 		_D("need to update slot%d", pos+1);
 		int ret = 0;
-		int badge_count = 0;
 		Evas_Object *slot = NULL;
 		Evas_Object *icon = NULL;
 		pkgmgrinfo_appinfo_h appinfo_h = NULL;
@@ -588,31 +276,27 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		char signal_r[30] = {0,};
 		snprintf(signal_r, sizeof(signal_r), "mouse_clicked_r_%d", pos+1);
 		elm_object_part_content_unset(item->layout, index);
-		if(item->obj[pos]->obj)
+		if (item->obj[pos]->obj)
 			evas_object_del(item->obj[pos]->obj);
 		item->obj[pos]->obj = NULL;
 
 		/*set new slot */
 		item->obj[pos]->appid = strdup(appid);
 
-		if(!strcmp(appid, "empty")){
+		if (!strcmp(appid, "empty")) {
 			_W("let it empty slot");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 			return;
 		}
 		slot = elm_layout_add(item->layout);
 		item->obj[pos]->obj = slot;
 		char full_path[PATH_MAX] = { 0, };
 		_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-		_D("full_path:%s",full_path);
+		_D("full_path:%s", full_path);
 		ret = elm_layout_file_set(slot, full_path, "icon_slot");
-		if(ret == EINA_FALSE){
+		if (ret == EINA_FALSE) {
 			_E("failed to set empty slot");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 			return;
 		}
 
@@ -623,44 +307,37 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 		char *label = NULL;
 		ret = pkgmgrinfo_appinfo_get_appinfo(appid, &appinfo_h);
-		if(ret != PMINFO_R_OK){
+		if (ret != PMINFO_R_OK) {
 			_E("get appinfo failed. let it empty slot, %d", ret);
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 			item->obj[pos]->appid = strdup("empty");
 			return;
 		}
 
-		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_pkgid(appinfo_h, &pkgid)){
+		if (PMINFO_R_OK != pkgmgrinfo_appinfo_get_pkgid(appinfo_h, &pkgid)) {
 			_E("get pkgid failed. let it empty slot");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 			item->obj[pos]->appid = strdup("empty");
 			return;
 		}
 		item->obj[pos]->pkgid = strdup(pkgid);
 
-		if(0 > pkgmgrinfo_pkginfo_get_pkginfo(pkgid, &pkghandle)){
+		if (0 > pkgmgrinfo_pkginfo_get_pkginfo(pkgid, &pkghandle)) {
 			_E("get pkghandle faile.");
 			elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-			elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 			item->obj[pos]->appid = strdup("empty");
 			return;
 		}
-		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)){
+		if (PMINFO_R_OK != pkgmgrinfo_appinfo_get_label(appinfo_h, &label)) {
 			_E("get label failed");
 			item->obj[pos]->label = strdup("");
-		}
-		else{
+		} else {
 			item->obj[pos]->label = strdup(label);
 		}
 		elm_object_part_text_set(slot, "name", label);
 
 		char *type = NULL;
-		if(PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type)){
+		if (PMINFO_R_OK != pkgmgrinfo_pkginfo_get_type(pkghandle, &type)) {
 			_E("get app type failed");
 		}
 		if (type) {
@@ -673,7 +350,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 		_W("%s", appid);
 		char *icon_path_tmp = NULL;
-		if(PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon_path_tmp)){
+		if (PMINFO_R_OK != pkgmgrinfo_appinfo_get_icon(appinfo_h, &icon_path_tmp)) {
 				_E("get icon path failed");
 			}
 			if (icon_path_tmp) {
@@ -692,27 +369,17 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		evas_object_image_file_set(icon, icon_path, NULL);
 		evas_object_image_filled_set(icon, EINA_TRUE);
 		evas_object_show(icon);
-		if(icon_path){
+		if (icon_path) {
 			free(icon_path);
 			icon_path = NULL;
 		}
 
-		badge_count = item_badge_count(item->obj[pos]);
-		if (badge_count) item_badge_show(item->obj[pos], badge_count);
-		else item_badge_hide(item->obj[pos]);
-
 		elm_object_part_content_set(slot, "icon", icon);
 
 		elm_object_signal_callback_del(item->layout, signal, "*", _slot_mouse_clicked_cb);
-		elm_object_signal_callback_del(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb);
-		elm_object_signal_callback_del(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb);
 
 		elm_object_signal_callback_add(item->layout, signal, "*", _slot_mouse_clicked_cb, item->obj[pos]);
-		elm_object_signal_callback_add(item->layout, signal_l, "*", _slot_l_mouse_clicked_cb, item->obj[pos]);
-		elm_object_signal_callback_add(item->layout, signal_r, "*", _slot_r_mouse_clicked_cb, item->obj[pos]);
 
-		elm_object_signal_callback_add(slot, "mouse_down", "*", _slot_mouse_down_cb, icon);
-		elm_object_signal_callback_add(slot, "mouse_up", "*", _slot_mouse_up_cb, icon);
 		elm_object_signal_callback_add(slot, "complete,launch_effect", "event", _glow_effect_done, slot);
 
 		if (appinfo_h) pkgmgrinfo_appinfo_destroy_appinfo(appinfo_h);
@@ -721,7 +388,7 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 		char log[10] = {0};
 		snprintf(log, sizeof(log)-1, "ASS%d", pos+1);
 
-		_D("slot is added %d",pos+1);
+		_D("slot is added %d", pos+1);
 
 	}
 	_EXIT;
@@ -729,127 +396,52 @@ static void _set_app_slot(struct info *item, const char *appid, int pos){
 
 }
 
-PUBLIC int widget_update_content(const char* id)
+PUBLIC void widget_update_content(struct info *item)
 {
 	_ENTER;
-	struct info *item;
-	item = find_item((char*)id);
 	int i = 0;
 	char *tmp = NULL;
 	char *first = NULL;
 	char* save = NULL;
 	int ret = 0;
-	if (!item) {
-		 _E("id is invalid");
-		return WIDGET_ERROR_NOT_EXIST;
+	if (!item || !item->content) {
+		_E("item is null");	
+		return;
 	}
-
-	_W("content : %s", item->content);
-
 	tmp = strdup(item->content);
-	if(ret != WIDGET_ERROR_NONE){
+	if (ret != WIDGET_ERROR_NONE) {
 		_E("set content error %x", ret);
 	}
 
-	for(i = 0 ; i < 4 ; i++){
-		if(i == 0){
-			first = strtok_r(tmp, " ",&save);
+	for (i = 0 ; i < 4 ; i++) {
+		if (i == 0) {
+			first = strtok_r(tmp, " ", &save);
 			_set_app_slot(item, first, i);
-		}
-		else{
-			_set_app_slot(item, strtok_r(NULL, " ",&save), i);
+		} else {
+			_set_app_slot(item, strtok_r(NULL, " ", &save), i);
 		}
 	}
-
-	/**
-	 * @NOTE
-	 * This function have to generate a new content.
-	 * If you don't want to generate new content,
-	 * return negative values.
-	 * or you have to generate the new content. in timeout msec.
-	*/
-
-	return WIDGET_ERROR_DISABLED;
 }
 
 
-PUBLIC int widget_set_content_info(const char* id, bundle *b)
+static void _mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-	_ENTER;
-	_D("ID:%s",id);
-	struct info *item;
-	int ret = 0;
-	char uri[256] = {0};
-
-	_E("[%s]\n", id);
-
-	item = find_item((char*)id);
-	if (!item) {
-		 _E("id is invalid");
-			return WIDGET_ERROR_NOT_EXIST;
-	}
-	const char *content = NULL;
-	bundle_get_str(b,"test",(char**)&content);
-	if(content){
-		if(!strcmp(content, "delete")){
-			_D("for test");
-			_D("[%s], [%s]", id, item->id);
-			snprintf(uri, sizeof(uri) - 1, "file://%s", item->id);
-			//ret = widget_provider_send_deleted(APPS_WIDGET, uri);
-			if(ret != WIDGET_ERROR_NONE){
-				_E("widget_provider_send_deleted error %x", ret);
-			}
-		}else{
-			_W("content : %s", content);
-			_E("ex-content info : %s", item->content);
-			free(item->content);
-			item->content = NULL;
-			item->content = strdup(content);
-
-			_E("new-content info : %s", item->content);
-		}
-	}
-
-	/**
-	 * @NOTE
-	 * This function have to generate a new content.
-	 * If you don't want to generate new content,
-	 * return negative values.
-	 * or you have to generate the new content. in timeout msec.
-	 */
-	return WIDGET_ERROR_NONE;
-}
-
-PUBLIC int widget_clicked(const char* id, const char *event, double timestamp, double x, double y)
-{
-	_ENTER;
-	_D("ID:%s",id);
-	_D("dbox clicked");
-	struct info *item;
-	item = find_item((char*)id);
-	if (!item) {
-		 _E("id is invalid");
-			return WIDGET_ERROR_NOT_EXIST;
-	}
-
-	return WIDGET_ERROR_NONE; /* No chages */
-}
-
-static void _mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info){
 	_ENTER;
 	struct object_info *info = NULL;
 	info = data;
 	elm_object_signal_emit(info->obj, "pressed", "widget_plus");
 }
 
-static void _mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info){
+static void _mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
 	_ENTER;
 	struct object_info *info = NULL;
 	info = data;
 	elm_object_signal_emit(info->obj, "released", "widget_plus");
 }
 
-static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source){
+static void _mouse_clicked_cb(void *data, Evas_Object *o, const char *emission, const char *source)
+{
 	_ENTER;
 	_D("slot clicked");
 #if 1
@@ -911,9 +503,9 @@ static struct object_info *_add_empty_slot(Evas_Object *parent, int pos, struct 
 	info->label = strdup("empty");
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(slot, full_path, "empty_slot");
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		LOGE("failed to set empty slot");
 		free(info);
 		return NULL;
@@ -934,19 +526,13 @@ static struct object_info *_add_empty_slot(Evas_Object *parent, int pos, struct 
 	return info;
 }
 
-static Evas_Object *_create_win(char* id, int w, int h)
+static Evas_Object *_create_win(widget_context_h context, int w, int h)
 {
 	_ENTER;
-	_D("ID:%s",id);
 	Evas_Object *win = NULL;
 	int ret;
 
-	if (id == NULL) {
-		dlog_print(DLOG_ERROR, LOG_TAG, "failed to get context.");
-		return NULL;
-	}
-
-	ret = widget_app_get_elm_win((widget_context_h)id, &win);
+	ret = widget_app_get_elm_win(context, &win);
 	if (ret != WIDGET_ERROR_NONE) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "failed to get window. err = %d", ret);
 		return NULL;
@@ -957,23 +543,22 @@ static Evas_Object *_create_win(char* id, int w, int h)
 	return win;
 }
 
-static int widget_resize(char* id, int w, int h, void *user_data)
+static int widget_resize(widget_context_h context, int w, int h, void *user_data)
 {
 	_ENTER;
-	_D("ID:%s",id);
-	struct info *item;
+
+	struct info *item = NULL;
 	int ret;
 	Evas_Object *layout = NULL;
 	Evas_Object *bg = NULL;
 	char *tmp = NULL;
-	item = find_item((char*)id);
+	widget_app_context_get_tag(context, (void**)&item);
 	if (!item) {
 		 _E("id is invalid");
 			return WIDGET_ERROR_NOT_EXIST;
 	}
 
-	if( item->first_loaded && w == item->w && h == item->h)
-	{
+	if (item->first_loaded && w == item->w && h == item->h) {
 		_E("no need to update");
 		return WIDGET_ERROR_NONE;
 	}
@@ -981,7 +566,7 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	
 
 	_D("WIDGET is resized\n");
-	item->dbox_win = _create_win(id,w,h);
+	item->dbox_win = _create_win(context, w, h);
 	if (!item->dbox_win) {
 		_E("item dbox win is not found");
 			return WIDGET_ERROR_FAULT;
@@ -993,10 +578,10 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	bg = elm_layout_add(item->dbox_win);
 	char full_path[PATH_MAX] = { 0, };
 	_get_resource(EDJE_FILE, full_path, sizeof(full_path));
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(bg, full_path, "dbox_bg");
 
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		LOGE("failed to set layout");
 		return WIDGET_ERROR_FAULT;
 	}
@@ -1008,10 +593,10 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 
 	layout = elm_layout_add(bg);
 	item->layout = layout;
-	_D("full_path:%s",full_path);
+	_D("full_path:%s", full_path);
 	ret = elm_layout_file_set(layout, full_path, "layout");
 	_D("layout added");
-	if(ret == EINA_FALSE){
+	if (ret == EINA_FALSE) {
 		LOGE("failed to set layout");
 		return WIDGET_ERROR_FAULT;
 	}
@@ -1035,89 +620,88 @@ static int widget_resize(char* id, int w, int h, void *user_data)
 	item->obj[3] = _add_empty_slot(layout, 4, item);
 	_D("four slots added");
 
-	bool prefkey_exist = false;
-	//read from preference key, if not exist then load default app order string else, load the existing app order string
-	ret = preference_is_existing(APP_WIDGET_CONTENT_KEY, &prefkey_exist);
-
-	if(ret !=PREFERENCE_ERROR_NONE)
-	{
-		_E("preference_is_existing api failed ret:%d ",ret);
+	if (!item->content) {
+		_D("content is null, so load default app order");
 		item->content = strdup(DEFAULT_APP_ORDER);
-		ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
-		if(ret != PREFERENCE_ERROR_NONE)
-		{
-			_E("preference_set_string api failed ret:%d",ret);
-		}
+	} else {
+		_D("content is not null, contnet: %s", item->content);
 	}
-	else
-	{
-		_D("preference_is_existing api success");
-		if(prefkey_exist)
-		{
-			_D("preference key is already exist");
-			ret = preference_get_string(APP_WIDGET_CONTENT_KEY, &item->content);
-
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_get_string api failed, so load default app order ret:%d",ret);
-				item->content = strdup(DEFAULT_APP_ORDER);
-			}
-		}
-		else
-		{
-			_E("preference_key is not exist. might be first boot so load default app order and store in preference key");
-			ret = preference_set_string(APP_WIDGET_CONTENT_KEY, DEFAULT_APP_ORDER);
-
-			if(ret != PREFERENCE_ERROR_NONE)
-			{
-				_E("preference_set_string api failed ret:%d",ret);
-			}
-			item->content = strdup(DEFAULT_APP_ORDER);
-		}
-	}
-	_D("item->content :%s",item->content);
-	preference_unset_changed_cb(APP_WIDGET_CONTENT_KEY);
-	preference_set_changed_cb(APP_WIDGET_CONTENT_KEY,preference_changed_cb_impl,&item->id);
+	
 	tmp = strdup(item->content);
 	char *first = NULL;
 	char* save = NULL;
 	int i = 0;
 
-	for(i = 0 ; i < 4 ; i++){
-		if(i == 0){
-			first = strtok_r(tmp, " ",&save);
+	for (i = 0 ; i < 4 ; i++) {
+		if (i == 0) {
+			first = strtok_r(tmp, " ", &save);
 			_set_app_slot(item, first, i);
-		}
-		else{
-			_set_app_slot(item, strtok_r(NULL, " ",&save), i);
+		} else {
+			_set_app_slot(item, strtok_r(NULL, " ", &save), i);
 		}
 	}
 
 	_D("widget resized to %dx%d\n", w, h);
-	item->w =w;
+	item->w = w;
 	item->h = h;
 	 return WIDGET_ERROR_NONE;
 }
 
 // NOTE: This function is going to be invoked for initializing all resources
-static int widget_create(char* id, bundle *content, int w, int h, void *user_data)
+static int widget_create(widget_context_h context, bundle *content, int w, int h, void *user_data)
 {
 	_ENTER;
-	_D("WIDGET is created with id:%s\n",id);
 	struct info *info;
+	int ret = 0;
 
 	info = malloc(sizeof(*info));
 	if (!info) {
 			return WIDGET_ERROR_OUT_OF_MEMORY;
 	}
-
-	info->id = strdup(id);
-	_D("ID:%s",id);
-	if (!info->id) {
-			free(info);
+	_D("test1");
+	info->context = context;
+	info->content = NULL;
+	info->content_bundle = NULL;
+	if (content) {
+		//retrieve the content from bundle and update to info->content.
+		_D("content sent by w-home");
+		info->content_bundle = bundle_dup(content);
+		ret = bundle_get_str(info->content_bundle, BUNDLE_CONTENT_KEY, &info->content);
+		_D("bundle_get_str: ret:%d", ret);
+					
+		if (!info->content)	{
+			_E("bundle get key failed, key is missing from the bundle");
+		} else {
+			_D("content: %s", info->content);
+		}
+	} else {
+		_D("content is emtpy");
+		info->content_bundle = bundle_create();
+		if (!info->content_bundle) {
+			_E("bundle creation fails");
 			return WIDGET_ERROR_OUT_OF_MEMORY;
+		}
+		info->content = strdup(DEFAULT_APP_ORDER);
+		ret = bundle_add_str(info->content_bundle, BUNDLE_ID_KEY, (char*)context);
+		_D("bundle add str BUNDLE_ID_KEY ret:%d", ret);
+		ret = bundle_add_str(info->content_bundle, BUNDLE_CONTENT_KEY, info->content);
+		_D("bundle add str BUNDLE_CONTENT_KEY ret:%d", ret);
+		ret = widget_app_context_set_content_info(context, info->content_bundle);
+		_D("widget_app_context_set_content_info ret:%d", ret);
+		char* raw = NULL;
+		int templen = 0;
+		ret = bundle_encode(info->content_bundle, &raw, &templen);
+		_D("bundle encode ret:%d", ret);
+		if (ret == 0)
+			_D("encoded content:%s \nlen:%d", raw, templen);
 	}
-
+	//todo: this code to be removed if widget service trigger update call works
+	ret = preference_set_string((char*)context, info->content);
+	if (ret != PREFERENCE_ERROR_NONE) {
+		_E("preference_set_string api failed ret:%d", ret);
+	}
+	ret = preference_set_changed_cb((char*)context, preference_changed_cb_impl, info);
+	_D("preference_set_changed_cb ret:%d", ret);
 	/**
 	 * @NOTE
 	 * cluster == 'user,created'
@@ -1125,140 +709,18 @@ static int widget_create(char* id, bundle *content, int w, int h, void *user_dat
 	 *
 	 * You don't need to care these two values if you don't know what are them
 	 */
+	ret = widget_app_context_set_tag(context, info);
+	_D("widget_app_context_set_tag ret:%d", ret);
 
 	info->size_type = WIDGET_SIZE_TYPE_UNKNOWN;
-	s_list = eina_list_append(s_list, info);
 	info->need_to_delete = 0;
 	info->first_loaded = 0;
-
-	/**
-	 * @NOTE
-	 * You can returns WIDGET_OUTPUT_UPDATED or WIDGET_NEED_TO_SCHEDULE or WIDGET_DONE
-	 * You also can use them at same time using '|'
-	 *
-	 * If your content is updated, from this function, you have to
-	 * return WIDGET_OUTPUT_UPDATED;
-	 *
-	 * If you want to the provider call your widget_update_content function ASAP
-	 * return WIDGET_NEED_TO_SCHEDULE;
-	 *
-	 * If your content is updated and need to call the update_content function ASAP,
-	 * return WIDGET_OUTPUT_UPDATED | WIDGET_NEED_TO_SCHEDULE
-	 *
-	 * Don't have any changes, just
-	 * return WIDGET_DONE
-	 */
-
-	/**
-	 * @NOTE
-	 * You create the default output image from here now.
-	 * So you HAVE TO return WIDGET_OUTPUT_UPDATED
-	 */
-	widget_resize(id,w, h, user_data);
-	return WIDGET_ERROR_NONE;
-}
-PUBLIC int widget_need_to_create(const char *cluster, const char *category)
-{
-	_ENTER;
-	/**
-	 * @NOTE
-	 * You don't need implement this, if don't know what this is.
-	 * return 0 or 1
-	 */
-	return 0;
-}
-
-PUBLIC int widget_change_group(const char* id, const char *cluster, const char *category)
-{
-	_ENTER;
-	struct info *item;
-
-	item = find_item((char*)id);
-	//widget_app_context_get_tag(id, (void**) &item);
-	if (!item) {
-		 _E("id is invalid");
-			return WIDGET_ERROR_NOT_EXIST;
-	}
-
-	/**
-	 * @NOTE
-	 * If you can generate new content in this function,
-	 * Generate a new content.
-	 * and return WIDGET_OUTPUT_UPDATED
-	 *
-	 * In case of you cannot create the updated image in this function directly,
-	 * return WIDGET_NEED_TO_SCHEDULE
-	 * The provider will call your widget_need_to_update & widget_update_content function.
-	 *
-	 * I recommend that if you are able to generate new content in this function,
-	 * generate it directly. and just returns WIDGET_OUTPUT_UPDATED
-	 *
-	 * Because if you return WIDGET_NEED_TO_SCHEDULE, the provider will try to update your livebox
-	 * But it can be interrupted by other events.
-	 * Then you livebox content updating will be delayed
-	 */
+	
+	widget_resize(context, w, h, user_data);
+	
 	return WIDGET_ERROR_NONE;
 }
 
-PUBLIC int widget_need_to_destroy(const char* id)
-{
-	_ENTER;
-	/**
-	 * @NOTE
-	 * You don't need implement this, if don't know what this is.
-	 * This will be called after call the widget_need_to_update function.
-	 * If the widget_need_to_update function returns 0,
-	 * The provider will call this.
-	 *
-	 * If you return 1, the provider will delete your box.
-	 */
-	return 0;
-}
-
-PUBLIC char *widget_pinup(const char* id, int pinup)
-{
-	_ENTER;
-	struct info *item;
-
-	item = find_item((char*)id);
-	if (!item) {
-		 _E("id is invalid");
-			return NULL;
-	}
-
-	return strdup(item->content);
-}
-
-PUBLIC int widget_is_pinned_up(const char* id)
-{
-	_ENTER;
-	_D("ID:%s",id);
-	struct info *item;
-
-	item = find_item((char*)id);
-	if (!item) {
-			return WIDGET_ERROR_NOT_EXIST;
-	}
-
-	/**
-	 * @NOTE
-	 * If you can generate new content in this function,
-	 * Generate a new content.
-	 * and return WIDGET_OUTPUT_UPDATED
-	 *
-	 * In case of you cannot create the updated image in this function directly,
-	 * return WIDGET_NEED_TO_SCHEDULE
-	 * The provider will call your widget_need_to_update & widget_update_content function.
-	 *
-	 * I recommend that if you are able to generate new content in this function,
-	 * generate it directly. and just returns WIDGET_OUTPUT_UPDATED
-	 *
-	 * Because if you return WIDGET_NEED_TO_SCHEDULE, the provider will try to update your livebox
-	 * But it can be interrupted by other events.
-	 * Then you livebox content updating will be delayed
-	 */
-	return WIDGET_ERROR_NONE;
-}
 
 void _set_app_label(struct object_info *obj)
 {
@@ -1285,31 +747,55 @@ widget_app_region_changed(app_event_info_h event_info, void *user_data)
 }
 
 static int
-widget_pause(char* id, void *user_data)
+widget_pause(widget_context_h context, void *user_data)
 {
 	_ENTER;
-	_D("ID:%s",id);
-	/* Take necessary actions when widget instance becomes invisible. */
+	/* Take necessary actions when widget instance becomes invisible. 
+	*/
+	struct info* item = NULL;
+	widget_app_context_get_tag(context, (void**)&item);
+	if (!item || !item->content) {
+		 _E("id is invalid");
+			return WIDGET_ERROR_NOT_EXIST;
+	}
+	int ret = 0;
 	return WIDGET_ERROR_NONE;
 
 }
 
 static int
-widget_resume(char* id, void *user_data)
+widget_resume(widget_context_h context, void *user_data)
 {
 	/* Take necessary actions when widget instance becomes visible. */
 	_ENTER;
-	_D("ID:%s",id);
 	return WIDGET_ERROR_NONE;
 }
 
 static int
-widget_update(char* id, bundle *content,
-                             int force, void *user_data)
+widget_update(widget_context_h context, bundle *content, int force, void *user_data)
 {
 	_ENTER;
-	_D("ID:%s",id);
 	/* Take necessary actions when widget instance should be updated. */
+	struct info* item = NULL;
+	widget_app_context_get_tag(context, (void**)&item);
+	if (!item) {
+		 _E("id is invalid");
+			return WIDGET_ERROR_NOT_EXIST;
+	}
+	if (content) {
+		item->content_bundle = bundle_dup(content);
+		bundle_get_str(item->content_bundle, BUNDLE_CONTENT_KEY, &item->content);
+		if (!item->content) {
+			_E("bundle get key failed, key is missing from the bundle");
+		}
+	} else {
+		item->content_bundle = bundle_create();
+		item->content = strdup(DEFAULT_APP_ORDER);
+		bundle_add_str(item->content_bundle, BUNDLE_CONTENT_KEY, item->content);
+		widget_app_context_set_content_info(item->context, item->content_bundle);
+	}
+	
+	widget_update_content(item);
 	return WIDGET_ERROR_NONE;
 }
 static widget_class_h
